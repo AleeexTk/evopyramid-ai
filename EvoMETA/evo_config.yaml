@@ -1,0 +1,10 @@
+logging:
+  base_dir: "~/Documents/EVO"
+  level: INFO
+memory:
+  auto_delete_threshold: 45
+server:
+  host: 0.0.0.0
+  port: 5002
+  debug: false
+  use_reloader: false
