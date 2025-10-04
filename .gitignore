@@ -1,0 +1,46 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+.eggs/
+*.egg-info/
+
+# Virtual environments
+.env
+.venv
+venv/
+ENV/
+
+# Logs and databases
+*.log
+*.sqlite3
+
+# Editor directories and files
+.idea/
+.DS_Store
+
+# Python tooling
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local environment variables
+.env.local
+.env.*.local
+
+# Node modules (if present)
+node_modules/
+
+# Coverage reports
+coverage.xml
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+

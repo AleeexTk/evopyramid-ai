@@ -1,0 +1,18 @@
+ritual_commands:
+  pear_init:
+    description: "Инициализация PEAR ядра"
+    command: "python3 Core/PEAR_Processor/__init__.py"
+
+  evo_core_run:
+    description: "Запуск локального ядра EvoCore"
+    command: "python3 apps/core/evo_core.py"
+
+  meta_sync:
+    description: "Синхронизация метапамяти"
+    command: "python3 EvoMETA/evo_sync.py"
+
+integration_modules:
+  - Core
+  - EvoAGI
+  - Evo_Chaos
+  - Evo_EcoSystem
