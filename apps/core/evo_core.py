@@ -8,6 +8,7 @@ operating as part of a cohesive organism.
 from __future__ import annotations
 
 import base64
+import copy
 import hashlib
 import io
 import json
@@ -46,20 +47,30 @@ DEFAULT_CONFIG = {
 }
 
 
+def _deep_update(base: Dict[str, Any], updates: Dict[str, Any]) -> Dict[str, Any]:
+    """Recursively update ``base`` with values from ``updates``."""
+
+    for key, value in updates.items():
+        if isinstance(value, dict) and isinstance(base.get(key), dict):
+            _deep_update(base[key], value)
+        elif isinstance(value, dict):
+            base[key] = copy.deepcopy(value)
+        else:
+            base[key] = value
+    return base
+
+
 def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     """Load YAML configuration if available, otherwise use defaults."""
+
+    config = copy.deepcopy(DEFAULT_CONFIG)
 
     if config_path and os.path.exists(config_path):
         with open(config_path, "r", encoding="utf-8") as cfg_file:
             loaded = yaml.safe_load(cfg_file) or {}
-        config = DEFAULT_CONFIG.copy()
-        for key, value in loaded.items():
-            if isinstance(value, dict):
-                config.setdefault(key, {}).update(value)
-            else:
-                config[key] = value
-        return config
-    return DEFAULT_CONFIG
+        return _deep_update(config, loaded)
+
+    return config
 
 
 # ---------------------------------------------------------------------------
