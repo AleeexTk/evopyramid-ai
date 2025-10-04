@@ -24,6 +24,9 @@ Context layers include:
 - `affect` – emotional resonance and intensity.
 - `memory` – fragments, relevance, and linkage information.
 
+Heuristics rely on deterministic keyword analysis rather than random sampling, so the
+same query always produces the same contextual signature.
+
 Priority paths are automatically determined:
 
 - `AGI` – high-urgency technical focus.

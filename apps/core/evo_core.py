@@ -21,7 +21,16 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, TYPE_CHECKING, Coroutine
 from uuid import uuid4
 
-import requests
+try:  # pragma: no cover - optional dependency
+    import requests
+    RequestException = requests.RequestException
+except ImportError:  # pragma: no cover - optional dependency fallback
+    requests = None  # type: ignore[assignment]
+
+    class RequestException(Exception):
+        """Fallback exception used when ``requests`` is unavailable."""
+
+        pass
 import yaml
 from flask import Flask, jsonify, request
 from PIL import Image
@@ -354,12 +363,18 @@ class ContainerOrchestrator:
         logger.info("Добавлена новая реплика ядра.")
 
     def connect_remote_pyramid(self, address: str, pyramid_id: str) -> None:
+        if requests is None:
+            logger.warning(
+                "Requests недоступен: пропускаем подключение пирамиды %s", pyramid_id
+            )
+            return
+
         try:
             response = requests.get(f"{address}/api/get_pyramid", timeout=5)
             response.raise_for_status()
             self.remote_pyramids[pyramid_id] = response.text
             logger.info("Подключена внешняя пирамида %s", pyramid_id)
-        except requests.RequestException as exc:
+        except RequestException as exc:
             logger.error("Ошибка подключения пирамиды %s: %s", pyramid_id, exc)
 
 
@@ -676,11 +691,17 @@ class ActionEngine:
 
         try:
             if action_type == "api_call" and isinstance(action_details, dict):
-                url = action_details.get("value", {}).get("url", "http://example.com")
-                payload = action_details.get("value", {}).get("payload", {})
-                response = requests.post(url, json=payload, timeout=5)
-                response.raise_for_status()
-                result = {"status": "success", "response": response.json()}
+                if requests is None:
+                    result = {
+                        "status": "failed",
+                        "reason": "requests_dependency_unavailable",
+                    }
+                else:
+                    url = action_details.get("value", {}).get("url", "http://example.com")
+                    payload = action_details.get("value", {}).get("payload", {})
+                    response = requests.post(url, json=payload, timeout=5)
+                    response.raise_for_status()
+                    result = {"status": "success", "response": response.json()}
             elif action_type == "file_write":
                 content = action_details.get("value", str(action_details)) if isinstance(action_details, dict) else str(action_details)
                 file_path = os.path.join(self.core.log_dir, f"action_{uuid4().hex[:8]}.txt")
@@ -692,7 +713,7 @@ class ActionEngine:
             else:
                 result = {"status": "success", "message": f"Имитация действия: {action_details}"}
             logger.info("Выполнено действие %s: %s", action_type, result)
-        except requests.RequestException as exc:
+        except RequestException as exc:
             logger.error("Ошибка при выполнении HTTP-запроса: %s", exc)
             result = {"status": "failed", "reason": str(exc)}
         return result
