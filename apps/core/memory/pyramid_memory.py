@@ -32,6 +32,11 @@ class PyramidMemory:
         self.fragments: Dict[str, MemoryFragment] = {}
         self._load_memory()
 
+    def reload_from_disk(self) -> None:
+        """Reload the memory fragments from the backing XML file."""
+
+        self._load_memory()
+
     def _load_memory(self) -> None:
         if not os.path.exists(self.xml_file):
             self._create_initial_memory()
@@ -225,15 +230,29 @@ class PyramidMemory:
 class EnhancedDigitalSoulLedger:
     """Enhanced ledger backed by the pyramid memory."""
 
-    def __init__(self, memory: PyramidMemory | None = None) -> None:
+    def __init__(
+        self,
+        memory: PyramidMemory | None = None,
+        *,
+        auto_reload: bool = False,
+    ) -> None:
         self.memory = memory or PyramidMemory()
+        self.auto_reload = auto_reload
 
     def set_memory(self, memory: PyramidMemory) -> None:
         """Update the underlying memory store reference."""
 
         self.memory = memory
 
+    def refresh_memory(self, *, force: bool = False) -> None:
+        """Refresh the underlying memory data from disk if needed."""
+
+        if (self.auto_reload or force) and hasattr(self.memory, "reload_from_disk"):
+            self.memory.reload_from_disk()
+
     async def find_related_fragments(self, query: str, threshold: float = 0.85) -> Dict[str, Any]:
+        if self.auto_reload:
+            self.refresh_memory()
         fragments = self.memory.find_relevant_fragments(query, threshold)
         details = [
             {
