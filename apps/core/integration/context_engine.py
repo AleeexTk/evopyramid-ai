@@ -21,7 +21,7 @@ class EvoCodexContextEngine:
     def __init__(self, memory_system: PyramidMemory | None = None) -> None:
         self.quantum_analyzer = QuantumContextAnalyzer
         self.memory_system = memory_system or PyramidMemory()
-        self.enhanced_ledger = EnhancedDigitalSoulLedger(self.memory_system)
+        self.enhanced_ledger = EnhancedDigitalSoulLedger(memory=self.memory_system)
         self.stats = {
             "total_queries": 0,
             "path_distribution": {"AGI": 0, "SOUL": 0, "ROLE": 0, "HYBRID": 0},
@@ -100,6 +100,7 @@ class EvoCodexContextEngine:
             emotional_tone=fragment_data.get("emotional_tone"),
         )
         self.memory_system.add_fragment(fragment)
+        self.enhanced_ledger.refresh_memory(force=True)
         return {"success": True, "fragment_id": fragment.id}
 
 
