@@ -1,0 +1,5 @@
+# Additional dependencies for the Quantum Context Engine
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+aiofiles>=23.0.0
+xmltodict>=0.13.0
