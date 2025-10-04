@@ -225,8 +225,13 @@ class PyramidMemory:
 class EnhancedDigitalSoulLedger:
     """Enhanced ledger backed by the pyramid memory."""
 
-    def __init__(self) -> None:
-        self.memory = PyramidMemory()
+    def __init__(self, memory: PyramidMemory | None = None) -> None:
+        self.memory = memory or PyramidMemory()
+
+    def set_memory(self, memory: PyramidMemory) -> None:
+        """Update the underlying memory store reference."""
+
+        self.memory = memory
 
     async def find_related_fragments(self, query: str, threshold: float = 0.85) -> Dict[str, Any]:
         fragments = self.memory.find_relevant_fragments(query, threshold)

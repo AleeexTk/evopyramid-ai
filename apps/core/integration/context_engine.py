@@ -18,10 +18,10 @@ from apps.core.memory.pyramid_memory import EnhancedDigitalSoulLedger, MemoryFra
 class EvoCodexContextEngine:
     """High-level orchestrator used to process EvoCodex queries."""
 
-    def __init__(self) -> None:
+    def __init__(self, memory_system: PyramidMemory | None = None) -> None:
         self.quantum_analyzer = QuantumContextAnalyzer
-        self.memory_system = PyramidMemory()
-        self.enhanced_ledger = EnhancedDigitalSoulLedger()
+        self.memory_system = memory_system or PyramidMemory()
+        self.enhanced_ledger = EnhancedDigitalSoulLedger(self.memory_system)
         self.stats = {
             "total_queries": 0,
             "path_distribution": {"AGI": 0, "SOUL": 0, "ROLE": 0, "HYBRID": 0},
