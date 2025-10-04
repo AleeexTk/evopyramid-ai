@@ -31,6 +31,8 @@ safely.
 ## Documentation
 
 - Architecture notes live in `docs/ARCHITECTURE.md`.
+- Collaboration rituals and role expectations are documented in
+  `docs/EVO_COLLAB_GUIDE.md`.
 - Additional ADRs will be located under `docs/adr/`.
 
 ## Community
