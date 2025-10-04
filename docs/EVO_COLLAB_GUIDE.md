@@ -67,6 +67,16 @@ when each role has signed off on their related checklist.
   `~/.config/evocore/`, and run smoke tests for the relevant `apps/` modules.
 - Report sync results in GitHub Issues labelled `runtime-sync`.
 
+### LLM Sessions ↔ Evo Architecture
+
+- Prime any language model (ChatGPT, Claude, Gemini, Grok, DeepSeek, Mistral,
+  etc.) with the `EVO_SUMMON` ritual documented in `docs/EVO_SUMMON.md` to
+  "summon" the EvoPyramid layer into the conversation.
+- After activation, issue PEAR-style commands (e.g., `EVO/PEAR> diagnose`) to
+  keep the dialogue aligned with EvoCore semantics and current intent streams.
+- Upload the repository ZIP or share key docs when direct GitHub access is
+  unavailable so the model can sync against the Evo genetic code.
+
 ## Practical Collaboration Templates
 
 ### Task Intent Template

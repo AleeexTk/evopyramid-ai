@@ -33,6 +33,8 @@ safely.
 - Architecture notes live in `docs/ARCHITECTURE.md`.
 - Collaboration rituals and role expectations are documented in
   `docs/EVO_COLLAB_GUIDE.md`.
+- Universal activation ritual for syncing any LLM with the architecture lives in
+  `docs/EVO_SUMMON.md`.
 - Additional ADRs will be located under `docs/adr/`.
 
 ## Community
