@@ -7,6 +7,7 @@ operating as part of a cohesive organism.
 """
 from __future__ import annotations
 
+import asyncio
 import base64
 import copy
 import hashlib
@@ -17,13 +18,21 @@ import os
 import random
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING, Coroutine
 from uuid import uuid4
 
 import requests
 import yaml
 from flask import Flask, jsonify, request
 from PIL import Image
+
+try:  # pragma: no cover - fallback path is covered by unit tests
+    from apps.core.integration.context_engine import get_context_engine
+except ImportError:  # pragma: no cover - allows running without optional deps
+    get_context_engine = None  # type: ignore[assignment]
+
+if TYPE_CHECKING:  # pragma: no cover - typing helpers only
+    from apps.core.integration.context_engine import EvoCodexContextEngine
 
 
 # ---------------------------------------------------------------------------
@@ -710,10 +719,92 @@ class EvoMetaCore:
         self.interface_adapter = InterfaceAdapter(self)
         self.ethics_core = EthicsCore(self)
         self.action_engine = ActionEngine(self)
+        self.context_engine: Optional["EvoCodexContextEngine"] = self._init_context_engine()
         self.is_running = True
         logger.info("EvoMetaCore: инициализация завершена.")
 
+    def _init_context_engine(self) -> Optional["EvoCodexContextEngine"]:
+        """Attempt to initialise the optional Quantum Context Engine."""
+
+        if get_context_engine is None:
+            logger.warning("Quantum Context Engine недоступен: модуль не найден.")
+            return None
+
+        try:
+            engine = get_context_engine()
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Ошибка инициализации Quantum Context Engine: %s", exc)
+            return None
+
+        logger.info("Quantum Context Engine: инициализация успешна.")
+        return engine
+
+    @staticmethod
+    def _run_async(coroutine: Coroutine[Any, Any, Any]) -> Any:
+        """Run an async coroutine in a dedicated event loop."""
+
+        loop = asyncio.new_event_loop()
+        try:
+            asyncio.set_event_loop(loop)
+            return loop.run_until_complete(coroutine)
+        finally:
+            asyncio.set_event_loop(None)
+            loop.close()
+
+    def process_context_query(
+        self, query: str, existing_context: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """Process a natural-language query through the context engine."""
+
+        if not self.context_engine:
+            logger.warning(
+                "Quantum Context Engine отключён, используется резервный ответ.")
+            return {
+                "success": False,
+                "response": f"Context engine unavailable for query: {query}",
+                "error": "context_engine_unavailable",
+            }
+
+        async def _execute() -> Dict[str, Any]:
+            return await self.context_engine.process_query(query, existing_context)
+
+        try:
+            result = self._run_async(_execute())
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Context engine error: %s", exc)
+            return {
+                "success": False,
+                "response": f"Context engine error: {exc}",
+                "error": str(exc),
+            }
+
+        affect = (result.get("context") or {}).get("affect") or {}
+        affect_intensity = float(affect.get("intensity", 0.5))
+        tags = ["context_engine", result.get("priority_path", "unknown_path")]
+
+        self.memory_manager.save_memory(
+            {
+                "query": query,
+                "response": result.get("response"),
+                "priority_path": result.get("priority_path"),
+                "context": result.get("context"),
+            },
+            tags,
+            "context_response",
+            level=1,
+            affective_score=affect_intensity,
+        )
+
+        return result
+
     def process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
+        if task.get("use_context_engine") or task.get("type") == "context_query":
+            query = str(task.get("data") or task.get("query") or "")
+            existing_context = task.get("context") if isinstance(task.get("context"), dict) else None
+            context_result = self.process_context_query(query, existing_context)
+            status = "success" if context_result.get("success", False) else "failed"
+            return {"status": status, "context_engine": context_result}
+
         if not self.ethics_core.check_action_ethics(task.get("type", "task"), task.get("data", "")):
             return {"status": "failed", "reason": "Этический конфликт"}
 
@@ -772,6 +863,16 @@ def create_app(config_path: Optional[str] = None) -> Flask:
 
         task = request.json or {}
         result = core.container_orchestrator.distribute_task(task)
+        return jsonify(result)
+
+    @app.route("/api/context_query", methods=["POST"])
+    def context_query() -> Any:  # noqa: D401
+        """Run a raw query through the Quantum Context Engine."""
+
+        payload = request.json or {}
+        query = str(payload.get("query", ""))
+        existing_context = payload.get("context") if isinstance(payload.get("context"), dict) else None
+        result = core.process_context_query(query, existing_context)
         return jsonify(result)
 
     @app.route("/api/get_pyramid", methods=["GET"])

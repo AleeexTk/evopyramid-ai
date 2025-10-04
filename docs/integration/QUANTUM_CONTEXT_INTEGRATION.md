@@ -67,6 +67,32 @@ pipeline, and returns formatted responses along with statistics.
    result = await engine.process_query(user_query)
    ```
 
+### EvoMetaCore integration
+
+`EvoMetaCore` automatically initialises the shared Quantum Context Engine (when
+available) and exposes a synchronous helper for issuing queries:
+
+```python
+from apps.core.evo_core import EvoMetaCore
+
+core = EvoMetaCore()
+context_snapshot = core.process_context_query("Как работает контекстный анализ?")
+```
+
+To route a `process_task` call through the context engine, set the
+`use_context_engine` flag or use the `context_query` task type:
+
+```python
+core.process_task({
+    "type": "context_query",
+    "data": "Подготовь обзор памяти Evo",
+    "use_context_engine": True,
+})
+```
+
+The Flask API now provides `/api/context_query` for direct HTTP access to the
+context engine.
+
 ## Memory Management
 
 Add new knowledge:
