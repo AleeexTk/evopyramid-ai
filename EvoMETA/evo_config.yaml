@@ -26,6 +26,14 @@ ritual_commands:
     description: "Обсуждение предложения через Nexus + Consensus"
     command: "python3 apps/cli/evo_nexus_cli.py --proposal 'Рефракция ролей для новой сессии' --session PEAR_A24"
 
+  meta_agi:
+    description: "Ролевое обсуждение AGI (CollectiveMindV1)"
+    command: "python3 apps/cli/collective_mind_cli.py \"Разработай архитектуру модуля интеграции AGI в EvoPyramid\""
+
+  show_flow:
+    description: "Показать последние метрики потока (tail JSONL)"
+    command: "bash -lc 'tail -n 20 $( [ -z \"$EVODIR\" ] && echo ./local_EVO || echo $EVODIR )/logs/collective_flow.jsonl || true'"
+
 integration_modules:
   - Core
   - EvoAGI
