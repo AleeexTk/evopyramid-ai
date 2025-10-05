@@ -1,0 +1,8 @@
+{
+  "codex": {
+    "resource_type": "codex",
+    "description": "GitHub Codex Connector for Evo review",
+    "scopes": ["repo_access", "auto_pr", "ci_feedback"],
+    "valid_until": "2099-12-31T23:59:59Z"
+  }
+}
