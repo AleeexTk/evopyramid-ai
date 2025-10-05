@@ -7,7 +7,7 @@ from typing import Any, Mapping
 
 import pytest
 
-from apps.core.time.evo_chrona import EvoChrona
+from apps.core.time.evo_chrona import EvoChrona, sanitize_moment_key
 
 
 class DummyMemory:
@@ -33,3 +33,20 @@ def test_kairos_moment_filename_is_windows_safe(timestamp: datetime) -> None:
 
     forbidden_characters = '<>:"/\\|?*'
     assert all(char not in safe_key for char in forbidden_characters)
+
+
+@pytest.mark.parametrize("forbidden_character", '<>:"/\\|?*')
+def test_sanitize_moment_key_replaces_forbidden_characters(
+    forbidden_character: str,
+) -> None:
+    sanitized = sanitize_moment_key(f"prefix{forbidden_character}suffix")
+
+    assert forbidden_character not in sanitized
+    assert sanitized == "prefix_suffix"
+
+
+def test_sanitize_moment_key_replaces_whitespace() -> None:
+    sanitized = sanitize_moment_key("Kairos moment")
+
+    assert " " not in sanitized
+    assert sanitized == "Kairos_moment"
