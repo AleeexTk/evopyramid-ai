@@ -1,65 +1,109 @@
-# EvoPyramid-AI Architecture Overview
+# EvoPyramid Architecture v2.0
 
-This document captures the evolving architecture of the EvoPyramid-AI platform.
-It will grow alongside the codebase and should be updated whenever the
-architecture changes.
+## Ролевая триада и граф исполнения
 
-## Current State
+### Soul → Trailblazer → Provocateur: Контракт ответственности
 
-- Repository scaffolding with community and automation guidelines.
-- CI workflow running linting (ruff) and a Python bytecode compilation smoke test.
-- Quantum context stack that combines intent, affect, and memory layers through
-  asynchronous pipelines.
+```mermaid
+graph TB
+    A[Входной интент] --> B{Soul Node}
+    B --> C[Архитектурный дизайн]
+    C --> D[QuantumContext формирование]
+    D --> E{Trailblazer Node}
+    E --> F[Оптимизация потоков]
+    F --> G[Маршрутизация контекста]
+    G --> H{Provocateur Node}
+    H --> I[Проверка безопасности]
+    I --> J[Валидация границ]
+    J --> K[Выходной ответ]
+    
+    B --> L[Context Engine]
+    E --> L
+    H --> L
+    L --> M[Memory Manager]
+    L --> N[Flow Monitor]
+    L --> O[Trinity Observer]
+    
+    subgraph "Внешние API-узлы"
+        P[JSONCrack Visualizer]
+        Q[Pyramid_JSON API]
+        R[Security Monitor]
+    end
+    
+    K --> P
+    K --> Q
+    J --> R
+```
 
-## Core Runtime Components
+Stateful граф исполнения (LangGraph-совместимый)
 
-### Quantum Context Layer
+```mermaid
+stateDiagram-v2
+    [*] --> QuantumContext
+    QuantumContext --> SoulDesign : интент принят
+    SoulDesign --> TrailblazerRoute : архитектура готова
+    TrailblazerRoute --> ProvocateurCheck : потоки оптимизированы
+    ProvocateurCheck --> MemoryPersist : безопасно
+    ProvocateurCheck --> SoulDesign : нужна доработка
+    MemoryPersist --> TrinityObserve : состояние сохранено
+    TrinityObserve --> [*] : цикл завершен
+    
+    note right of ProvocateurCheck
+        Проверки безопасности:
+        - JWT/API ключи
+        - Rate limiting  
+        - Контекстные границы
+        - Инъекционные угрозы
+    end note
+```
 
-- `apps/core/context/models.py` — shared dataclasses (`IntentResult`,
-  `AffectResult`, `MemoryResult`) and the `MemoryLedgerProtocol`. The protocol
-  makes it explicit how memory providers must behave and enables dependency
-  injection when wiring higher level orchestrators.
-- `apps/core/context/quantum_analyzer.py` — orchestrates the asynchronous
-  gathering of intent, affect, and memory signals. The analyzer now accepts the
-  shared protocol so test doubles or alternative ledgers can be supplied
-  without modifying the analyzer internals.
-- Pipelines (`agi_first_pipeline`, `soul_first_pipeline`, `role_first_pipeline`,
-  `hybrid_pipeline`) transform the analyzed context into formatted responses
-  that keep metadata attached for downstream consumers.
+## API контракты и интеграции
 
-### Memory Pyramid Layer
+### JSONCrack визуализация узлов
 
-- `apps/core/memory/pyramid_memory.py` — XML-backed hierarchical memory store.
-  The `EnhancedDigitalSoulLedger` implements the shared protocol and returns a
-  structured `MemoryResult`, ensuring the analyzer and integration engine work
-  with the same snapshot of fragments.
-- Memory fragments are stored as `MemoryFragment` dataclasses and weighted per
-  layer (core, functional, emotional, meta). Relevance scoring is term-based and
-  now feeds the `details` field that surfaces metadata alongside fragment IDs.
+```yaml
+api_endpoints:
+  /api/push:
+    method: POST
+    roles: [Soul, Trailblazer]
+    security: JWT + Context-Signature
+  
+  /api/pull: 
+    method: GET
+    roles: [All]
+    security: API-Key + TLS
+  
+  /api/status:
+    method: GET
+    roles: [Provocateur, Monitor]
+    security: Internal-Only
+```
 
-### Integration Layer
+### Pyramid_JSON производственный стэк
 
-- `apps/core/integration/context_engine.py` — the EvoCodex context engine. It
-  injects the shared ledger into the analyzer, processes pipelines based on the
-  computed priority path, and exposes statistics about query distribution and
-  timings.
-- `tests/context/test_context_engine_memory_sync.py` verifies ledger snapshots
-  remain synchronised after runtime mutations, guarding against regressions in
-  the dependency injection wiring.
+```json
+{
+  "production_stack": {
+    "api_framework": "FastAPI + OpenAPI",
+    "security_layers": ["JWT", "TLS", "OWASP_ZAP"],
+    "monitoring": ["Datadog", "Prometheus", "Health_Checks"],
+    "deployment": "Docker + Kubernetes",
+    "config_profiles": ["local", "termux", "cloud"]
+  }
+}
+```
 
-## Next Steps
+## Безопасность как первоклассная роль
 
-- [ ] Describe deployment targets and runtime environments.
-- [ ] Add architectural decision records under `docs/adr/`.
-- [ ] Extend the architecture section with sequence diagrams covering the
-      context-to-memory feedback loop.
+### Provocateur Security Matrix
 
-## Contributing to the Architecture Doc
+| Угроза                | Защита               | Мониторинг           |
+| --------------------- | -------------------- | -------------------- |
+| API инъекции          | Context-валидация    | Real-time алерты     |
+| Неавторизованный доступ | JWT + RBAC         | Audit логи           |
+| Перегрузка системы    | Rate limiting        | Metrics дашборд      |
+| Утечки данных         | TLS + шифрование     | Trinity Observer     |
 
-When you introduce a new subsystem or significant dependency, update this file
-with a short summary and diagrams where applicable. Coordinate with the
-collaboration practices outlined in `docs/EVO_COLLAB_GUIDE.md` so role sign-offs
-and tooling bridges stay aligned with architectural changes. For LLM session
-workflows, prime the context using `docs/EVO_SUMMON.md` to ensure the
-architecture layer is "summoned" before gathering design feedback or running
-ritual commands.
+---
+
+Документ актуализирован под индустриальные стандарты 2025.
