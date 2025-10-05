@@ -1,6 +1,7 @@
 import asyncio
+from contextlib import suppress
 from datetime import datetime, timedelta
-from typing import Dict, Any, List
+from typing import Any, Dict, List, Optional
 import os
 
 try:
@@ -27,10 +28,13 @@ class EWAWatcher:
         }
         from apps.core.time.evo_chrona import chrona
 
-        chrona.register_pulse_handler(self._on_chrono_pulse)
+        self._chrona = chrona
+        self._chrona.register_pulse_handler(self._on_chrono_pulse)
         self._tasks: List[asyncio.Task] = []
-        self._memory = None
+        self._memory: Optional[Any] = None
         self.monitor_interval = 30.0
+        self._active = False
+        self._finalized = False
 
     def _parse_duration(self, raw: str) -> timedelta:
         raw = raw.strip().lower()
@@ -42,6 +46,7 @@ class EWAWatcher:
 
     async def start(self, memory) -> None:
         self._memory = memory
+        self._active = True
         print(f"🕰 EWA: session {self.session_id} for {self.duration}")
         self._tasks = [
             asyncio.create_task(self._monitor_flow()),
@@ -49,6 +54,8 @@ class EWAWatcher:
         ]
 
     async def _on_chrono_pulse(self, pulse: Dict[str, Any]) -> None:
+        if not self._active:
+            return
         remaining = self.end_time - datetime.utcnow()
         if remaining < self.duration * 0.25:
             if self.current_flow_state.get("coherence", 0.0) > 0.6:
@@ -56,8 +63,10 @@ class EWAWatcher:
 
     async def _monitor_flow(self) -> None:
         try:
-            while True:
+            while self._active:
                 await asyncio.sleep(self.monitor_interval)
+                if not self._active:
+                    break
                 from apps.core.monitoring.flow_monitor import FlowMonitor
 
                 flow = FlowMonitor.get_current_flow()
@@ -110,6 +119,11 @@ class EWAWatcher:
         await self._save_yaml(snap, suffix="autosave")
 
     async def _finalize(self) -> None:
+        if self._finalized:
+            return
+        self._finalized = True
+        self._active = False
+
         payload = {
             "session_id": self.session_id,
             "start_time": self.start_time.isoformat(),
@@ -123,6 +137,18 @@ class EWAWatcher:
                 await self._memory.flush()
             except Exception as exc:  # pragma: no cover - defensive logging
                 print(f"[EWA] flush error: {exc}")
+        if self._chrona:
+            self._chrona.unregister_pulse_handler(self._on_chrono_pulse)
+
+        current_task = asyncio.current_task()
+        for task in list(self._tasks):
+            if task is current_task:
+                continue
+            if not task.done():
+                task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+        self._tasks.clear()
         print(f"✅ EWA: session {self.session_id} archived")
 
     async def _save_yaml(self, payload: Dict[str, Any], suffix: str) -> None:
