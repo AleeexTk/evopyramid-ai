@@ -34,7 +34,7 @@ def test_context_engine_shares_memory_instance(tmp_path) -> None:
 
     results = asyncio.run(_store_and_fetch())
 
-    assert fragment_id in results["fragments"], "Новый фрагмент должен быть доступен через ledger"
+    assert fragment_id in results.fragments, "Новый фрагмент должен быть доступен через ledger"
     assert memory_file.exists(), "Файл памяти должен быть создан"
 
 
@@ -69,4 +69,4 @@ def test_context_engine_refreshes_ledger_after_add(tmp_path) -> None:
 
     results = asyncio.run(_store_and_fetch())
 
-    assert fragment_id in results["fragments"], "Ledger должен видеть фрагмент после обновления"
+    assert fragment_id in results.fragments, "Ledger должен видеть фрагмент после обновления"
