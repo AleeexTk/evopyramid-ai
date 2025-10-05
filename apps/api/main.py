@@ -27,10 +27,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=["*"] if settings.debug else ["evopyramid.com", "api.evopyramid.com"],
-)
+trusted_hosts = list(settings.trusted_hosts)
+if settings.debug and "*" not in trusted_hosts:
+    trusted_hosts.append("*")
+
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=trusted_hosts)
 
 # Роутеры
 app.include_router(health.router, prefix="/api")

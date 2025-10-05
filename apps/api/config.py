@@ -19,6 +19,14 @@ class APISettings(BaseSettings):
     jwt_secret: str = "dev-secret"
     api_rate_limit: str = "100/minute"
     cors_origins: List[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    trusted_hosts: List[str] = Field(
+        default_factory=lambda: [
+            "localhost",
+            "127.0.0.1",
+            "evopyramid.com",
+            "api.evopyramid.com",
+        ]
+    )
 
     # Мониторинг
     metrics_enabled: bool = True
