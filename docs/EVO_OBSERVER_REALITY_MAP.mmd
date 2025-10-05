@@ -1,0 +1,30 @@
+flowchart TD
+  subgraph GitHub["🌐 GitHub / Codex CI"]
+    A[Codex Sync Workflow] --> B[PR Review & Feedback]
+    B --> C[logs/codex_feedback.log]
+  end
+
+  subgraph EvoSystem["🧠 EvoPyramid Core"]
+    D[Trinity Observer] -->|Reads Feedback| C
+    D --> E[Flow Monitor]
+    E --> F[Chronos ⏱️]
+    E --> G[Kairos 💡]
+    E --> H[Mnemosyne 🧬]
+    D --> I[EvoMemory YAML Snapshots]
+  end
+
+  subgraph EvoCI["⚙️ CI/CD + Memory Loop"]
+    I --> J[Codex sees changes in next PR]
+    J --> A
+  end
+
+  C --> D
+  I -.->|"Feedback Resonance"| A
+
+  classDef codex fill:#2e77ff,stroke:#003399,color:#fff;
+  classDef evo fill:#11a36d,stroke:#045f41,color:#fff;
+  classDef loop fill:#f0b400,stroke:#805a00,color:#222;
+
+  class A,B,C codex;
+  class D,E,F,G,H,I evo;
+  class J loop;
