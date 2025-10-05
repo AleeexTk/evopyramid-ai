@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any, Callable, List, Optional
@@ -89,17 +91,26 @@ class EWAWatcher:
         self._chrona.register_pulse_handler(self._on_chrono_pulse)
         self._chrona_registered = True
 
-        self._active = False
+        self._active = True
+        self._session_active = False
         self._started_at: datetime | None = None
         self._pulses: List[EWAPulse] = []
         self._archive: List[EWASessionArchive] = []
+        self._tasks: set[asyncio.Task[Any]] = set()
+        self._session_timer: asyncio.Task[Any] | None = None
 
     def __enter__(self) -> "EWAWatcher":
-        self.start()
-        return self
+        raise RuntimeError("Use 'async with' to manage an EWAWatcher instance")
 
     def __exit__(self, exc_type, exc, tb) -> None:  # type: ignore[override]
-        self.teardown()
+        raise RuntimeError("Use 'async with' to manage an EWAWatcher instance")
+
+    async def __aenter__(self) -> "EWAWatcher":
+        await self.start()
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb) -> None:
+        await self.teardown()
 
     @property
     def chrona(self) -> Chrona:
@@ -113,39 +124,49 @@ class EWAWatcher:
 
         return list(self._archive)
 
-    def start(self) -> None:
+    async def start(self) -> None:
         """Begin a new watcher session."""
 
-        if self._active:
+        if self._session_active:
             raise RuntimeError("Watcher session already active")
         self._started_at = _utcnow()
+        self._session_active = True
         self._active = True
+        loop = asyncio.get_running_loop()
+        if self._session_timer is None:
+            self._session_timer = loop.create_task(
+                self._monitor_flow(),
+                name=f"EWAWatcher[{self.session_id}].monitor_flow",
+            )
+            self._track_task(self._session_timer)
 
     def record(self, payload: Any) -> None:
         """Record a payload for the active session."""
 
-        if not self._active:
+        if not self._session_active:
             raise RuntimeError("Cannot record without an active session")
         self._pulses.append(EWAPulse(payload=payload))
 
-    def teardown(self) -> None:
+    async def teardown(self) -> None:
         """Public shutdown entry point."""
 
-        if not self._active:
+        if not self._session_active:
+            self._active = False
+            await self._cancel_background_tasks()
             self._unregister_from_chrona()
             return
-        self._finalize()
+        await self._finalize()
 
     def flush(self) -> None:
         """Manually trigger a flush of the current session payloads."""
 
-        if not self._active:
+        if not self._session_active:
             return
         self._archive_session()
         self._flush_buffers()
 
     def _on_chrono_pulse(self, _: datetime) -> None:
-        if not self._active:
+        if not self._session_active:
             return
         if not self._pulses:
             return
@@ -166,10 +187,12 @@ class EWAWatcher:
     def _flush_buffers(self) -> None:
         self._pulses.clear()
 
-    def _finalize(self) -> None:
+    async def _finalize(self) -> None:
         self._archive_session()
         self._flush_buffers()
+        self._session_active = False
         self._active = False
+        await self._cancel_background_tasks()
         self._unregister_from_chrona()
 
     def _unregister_from_chrona(self) -> None:
@@ -177,6 +200,54 @@ class EWAWatcher:
             return
         self._chrona.unregister_pulse_handler(self._on_chrono_pulse)
         self._chrona_registered = False
+
+    async def _monitor_flow(self) -> None:
+        """Background coroutine that stays alive while the watcher is active."""
+
+        task = asyncio.current_task()
+        try:
+            while self._active:
+                await asyncio.sleep(0.1)
+        finally:
+            if task is not None:
+                self._tasks.discard(task)
+
+    def _track_task(self, task: asyncio.Task[Any]) -> None:
+        self._tasks.add(task)
+        task.add_done_callback(lambda finished: self._tasks.discard(finished))
+
+    async def _cancel_background_tasks(self) -> None:
+        if not self._tasks:
+            return
+
+        current = asyncio.current_task()
+        tasks_to_await: list[asyncio.Task[Any]] = []
+
+        for task in list(self._tasks):
+            if task is current:
+                continue
+            if task is self._session_timer:
+                continue
+            task.cancel()
+            tasks_to_await.append(task)
+
+        for task in tasks_to_await:
+            with suppress(asyncio.CancelledError):
+                await task
+            self._tasks.discard(task)
+
+        if self._session_timer is not None and self._session_timer is not current:
+            with suppress(asyncio.CancelledError):
+                await self._session_timer
+            self._tasks.discard(self._session_timer)
+
+        self._session_timer = None
+
+    @property
+    def background_task_count(self) -> int:
+        """Expose the number of tracked background tasks still alive."""
+
+        return sum(1 for task in self._tasks if not task.done())
 
 
 __all__ = [
