@@ -51,8 +51,13 @@ class EvoChrona:
         self._memory = memory
 
     def _derive_moment_key(self, moment: datetime) -> str:
-        iso_moment = moment.isoformat(timespec="seconds")
-        return sanitize_moment_key(iso_moment)
+        """Return a sanitized storage key derived from ``moment``."""
+
+        formatted = moment.strftime("%Y-%m-%dT%H_%M_%S")
+        tz_offset = moment.strftime("%z")
+        if tz_offset:
+            formatted = f"{formatted}{tz_offset}"
+        return sanitize_moment_key(formatted)
 
     def _save_kairos_moment(
         self,
