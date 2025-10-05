@@ -19,7 +19,7 @@ class EvoCodexContextEngine:
     """High-level orchestrator used to process EvoCodex queries."""
 
     def __init__(self, memory_system: PyramidMemory | None = None) -> None:
-        self.quantum_analyzer = QuantumContextAnalyzer
+        self.quantum_analyzer_cls = QuantumContextAnalyzer
         self.memory_system = memory_system or PyramidMemory()
         self.enhanced_ledger = EnhancedDigitalSoulLedger(memory=self.memory_system)
         self.stats = {
@@ -37,10 +37,11 @@ class EvoCodexContextEngine:
         self.stats["total_queries"] += 1
 
         try:
-            analyzer = self.quantum_analyzer(query)
+            analyzer = self.quantum_analyzer_cls(
+                query,
+                memory_ledger=self.enhanced_ledger,
+            )
             context = await analyzer.analyze()
-            memory_context = await self.enhanced_ledger.find_related_fragments(query)
-            context["memory"].update(memory_context)
             context["priority_path"] = analyzer.priority_path
 
             response = await self._execute_pipeline(analyzer.priority_path, context)

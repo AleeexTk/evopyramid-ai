@@ -4,47 +4,14 @@ from __future__ import annotations
 
 import asyncio
 import random
-from dataclasses import asdict, dataclass
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-
-@dataclass
-class IntentResult:
-    """Intent detection result."""
-
-    urgency: float
-    type: str
-    confidence: float
-
-    def to_dict(self) -> Dict[str, float | str]:
-        """Convert the dataclass to a dictionary."""
-        return asdict(self)
-
-
-@dataclass
-class AffectResult:
-    """Affective analysis result."""
-
-    soul_resonance: float
-    emotion: str
-    intensity: float
-
-    def to_dict(self) -> Dict[str, float | str]:
-        """Convert the dataclass to a dictionary."""
-        return asdict(self)
-
-
-@dataclass
-class MemoryResult:
-    """Memory lookup result."""
-
-    has_strong_links: bool
-    fragments: List[str]
-    relevance_score: float
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert the dataclass to a dictionary."""
-        return asdict(self)
+from apps.core.context.models import (
+    AffectResult,
+    IntentResult,
+    MemoryLedgerProtocol,
+    MemoryResult,
+)
 
 
 class IntentModel:
@@ -98,6 +65,7 @@ class DigitalSoulLedger:
         self, query: str, threshold: float = 0.85
     ) -> MemoryResult:
         """Return simulated fragments related to the query."""
+
         del query, threshold
         await asyncio.sleep(0.1)
         has_links = random.random() > 0.3
@@ -160,13 +128,20 @@ role_adapter = RoleAdapter()
 class QuantumContextAnalyzer:
     """Main entry-point for context analysis inside EvoCodex."""
 
-    def __init__(self, query: str) -> None:
+    def __init__(
+        self,
+        query: str,
+        *,
+        intent_model: IntentModel | None = None,
+        soul_encoder: SoulAffectEncoder | None = None,
+        memory_ledger: Optional[MemoryLedgerProtocol] = None,
+    ) -> None:
         self.query = query
         self.context_layers: Dict[str, Any] = {}
         self.priority_path: str | None = None
-        self._intent_model = IntentModel()
-        self._soul_encoder = SoulAffectEncoder()
-        self._ledger = DigitalSoulLedger()
+        self._intent_model = intent_model or IntentModel()
+        self._soul_encoder = soul_encoder or SoulAffectEncoder()
+        self._ledger: MemoryLedgerProtocol = memory_ledger or DigitalSoulLedger()
 
     async def analyze(self) -> Dict[str, Any]:
         """Perform asynchronous context analysis across all layers."""
