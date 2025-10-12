@@ -179,3 +179,36 @@ After every 24 hours or major merge:
 
 Place this charter within `docs/` so it can be surfaced rapidly alongside the initialization prompt. Pairing both documents ensures consistent governance for online Codex interactions and local automation agents alike.
 
+---
+
+🪶 **Linked Operational Companion**
+
+To initialize or reactivate Codex within any session, see: [`docs/EVO_CODEOPS_INIT_PROMPT.md`](./EVO_CODEOPS_INIT_PROMPT.md)
+
+
+# ============================================
+# 🇷🇺 EVO PYRAMID — СПРАВКА ПО РАБОТЕ В TERMUX
+# ============================================
+# После применения патча:
+#
+# 🔧 Основные каталоги:
+#   ~/evopyramid-ai/apps/core/           – ядро EVO
+#   ~/evopyramid-ai/docs/                – документация, чартеры и манифесты
+#   ~/evopyramid-ai/logs/                – логи работы Trinity и Codex
+#
+# 🧠 Основные скрипты:
+#   launch_evo.sh             – автоматический запуск всех процессов
+#   install_evo.sh            – установка зависимостей и пакетов
+#   evo_sync.sh               – синхронизация с GitHub
+#
+# ⚙️ Режимы и процессы:
+#   Trinity Observer          – мониторинг процессов и синхронизация Kairos/Chronos
+#   EvoLocalContext           – связь между Termux, Desktop и Cloud
+#   EvoCodex                  – интеллектуальный слой разработки
+#   PEAR Rituals              – ритуалы инициализации архитектуры
+#
+# 📘 Документы:
+#   EVO_CODEOPS_INIT_PROMPT.md – инструкция для запуска Codex
+#   EVO_CODEX_USER_CHARTER.md  – правила и поведение Codex
+# ============================================
+

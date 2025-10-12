@@ -69,6 +69,37 @@ Confirm readiness:
 ```
 
 Store this file locally to quickly recall the initialization block whenever you initiate a fresh collaboration cycle with @codex.
+
+---
+
+🧩 **Companion Reference**
+
+This initialization file works in tandem with the canonical behavioral charter:
+
+→ See [`docs/EVO_CODEX_USER_CHARTER.md`](./EVO_CODEX_USER_CHARTER.md) for the full governance, behavioral, and architectural matrix that defines Codex operation across all contexts.
+
+
+# ============================================
+# 🇷🇺 EVO PYRAMID TERMUX ИНСТРУКЦИЯ
+# ============================================
+# После применения патча (git apply) выполните:
+#
+# 1️⃣ Проверка окружения:
+#     termux-info
+#     python --version
+#     git status
+#
+# 2️⃣ Запуск основных процессов:
+#     bash launch_evo.sh                – запуск EVO ядра
+#     python -m apps.core.observers.trinity_observer  – активация Trinity Observer
+#     python -m apps.core.keys.key_loader            – загрузка ключей и инициализация Codex
+#
+# 3️⃣ Полезные команды:
+#     evo help         – показать справку команд EVO
+#     evo sync         – синхронизация Termux ↔ GitHub
+#     evo status       – текущее состояние архитектуры
+#     evo codex-init   – запуск Codex в режиме Quaternity
+# ============================================
 @codex
 # 🧠 EVO CODEOPS INIT SEQUENCE — QUATERNITY MODE vΩ
 
