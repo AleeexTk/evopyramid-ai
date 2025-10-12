@@ -69,6 +69,18 @@ for component in \
   if [ ! -f "$component" ]; then
     echo "❌ Не найден компонент $component" >&2
     echo "Запустите scripts/integrate_quantum_context.sh перед установкой" >&2
+if [ -f "requirements.txt" ]; then
+  log "📥 Устанавливаем зависимости из requirements.txt"
+  pip install --upgrade pip >/dev/null
+  pip install -r requirements.txt
+else
+  log "⚠️ requirements.txt не найден, пропускаем установку зависимостей"
+fi
+
+log "📁 Проверяем структуру проекта"
+for path in apps/core/context apps/core/memory apps/core/integration; do
+  if [ ! -d "$path" ]; then
+    echo "❌ Не найдена директория $path" >&2
     exit 1
   fi
 done
@@ -141,6 +153,17 @@ if [ ! -f "evo_config.json" ]; then
 }
 JSON
 fi
+log "🧪 Запуск тестов"
+python -m pytest tests/context/test_quantum_analyzer.py -v
+python -m pytest tests/context/test_pyramid_memory.py -v
+
+log "🎯 Запуск демонстрации"
+python - <<'PYCODE'
+import asyncio
+from apps.core.integration.context_engine import demo_integration
+
+asyncio.run(demo_integration())
+PYCODE
 
 log "🎉 Установка завершена"
 log "Документация: docs/integration/QUANTUM_CONTEXT_INTEGRATION.md"

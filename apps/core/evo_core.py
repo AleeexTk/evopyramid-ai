@@ -177,7 +177,7 @@ class HierarchicalPyramidMemory:
         )
         self.archive_dir = os.path.join(log_dir, "archive")
         os.makedirs(self.archive_dir, exist_ok=True)
-        self.cache: Dict[str, Dict[str, Any]] = {}
+        self.cache: Dict[tuple, List[Dict[str, Any]]] = {}
         self.patterns: Dict[tuple, int] = {}
         logger.info("HierarchicalPyramidMemory: инициализирована.")
 
@@ -192,9 +192,10 @@ class HierarchicalPyramidMemory:
         affective_score: float = 0.5,
     ) -> Optional[str]:
         node_id = f"memory_{uuid4().hex[:8]}"
+        relevance_score = self._calculate_relevance(tags, affective_score, content)
         metadata = {
             "tags": tags,
-            "relevance": 0.7,
+            "relevance": relevance_score,
             "source": memory_type,
             "parent_ids": [parent_id] if parent_id else [],
             "child_ids": [],
@@ -208,8 +209,11 @@ class HierarchicalPyramidMemory:
         self.nodes[node_id] = node
         if parent_id and parent_id in self.nodes:
             self.nodes[parent_id].metadata.setdefault("child_ids", []).append(node_id)
-        if metadata["relevance"] > 0.8:
-            self.cache[node_id] = node.to_dict()
+        if relevance_score >= 0.8:
+            cache_key = self._build_cache_key_from_tags(tags)
+            if cache_key:
+                self.cache.setdefault(cache_key, [])
+                self.cache[cache_key].append(node.to_dict())
         self._update_patterns(tags)
         logger.info(
             "Сохранён узел памяти %s (уровень %s, тип %s)", node_id, level, memory_type
@@ -239,19 +243,50 @@ class HierarchicalPyramidMemory:
         level: Optional[int] = None,
         use_cache: bool = True,
     ) -> List[Dict[str, Any]]:
-        if use_cache and query in self.cache:
-            return [self.cache[query]]
+        cache_key = self._build_cache_key_from_query(query)
+        if use_cache and cache_key in self.cache:
+            return [copy.deepcopy(item) for item in self.cache[cache_key]]
         results: List[Dict[str, Any]] = []
+        high_relevance_results: List[Dict[str, Any]] = []
+        query_tokens = self._tokenise_query(query)
         for node in self.nodes.values():
             if level is not None and node.level != level:
                 continue
             tags = node.metadata.get("tags", [])
-            if any(tag in query for tag in tags) and node.verify_signature():
-                results.append(node.to_dict())
+            tag_tokens = [tag.lower() for tag in tags]
+            if (query_tokens & set(tag_tokens) or any(tag in query.lower() for tag in tag_tokens)) and node.verify_signature():
+                node_dict = node.to_dict()
+                results.append(node_dict)
                 node.metadata["last_access"] = int(time.time())
-                if node.metadata.get("relevance", 0.0) > 0.8:
-                    self.cache[node.id] = node.to_dict()
+                if node.metadata.get("relevance", 0.0) >= 0.8:
+                    high_relevance_results.append(node_dict)
+        if high_relevance_results and cache_key:
+            self.cache[cache_key] = [copy.deepcopy(item) for item in high_relevance_results]
         return results
+
+    def _calculate_relevance(
+        self,
+        tags: List[str],
+        affective_score: float,
+        content: Optional[Dict[str, Any]] = None,
+    ) -> float:
+        tag_boost = min(0.4, 0.05 * len({tag.lower() for tag in tags if tag}))
+        affective_adjustment = (max(0.0, min(1.0, affective_score)) - 0.5) * 0.6
+        urgency_hint = 0.0
+        if content:
+            urgency_hint = 0.1 if content.get("priority") == "high" else 0.0
+        relevance = 0.5 + tag_boost + affective_adjustment + urgency_hint
+        return max(0.0, min(1.0, relevance))
+
+    def _build_cache_key_from_tags(self, tags: List[str]) -> tuple:
+        normalised_tags = tuple(sorted({tag.lower() for tag in tags if tag}))
+        return normalised_tags
+
+    def _build_cache_key_from_query(self, query: str) -> tuple:
+        return tuple(sorted(self._tokenise_query(query)))
+
+    def _tokenise_query(self, query: str) -> set:
+        return {token for token in query.lower().split() if token}
 
     def quantum_leap(self, node_id1: str, node_id2: str) -> Optional[Dict[str, Any]]:
         if node_id1 not in self.nodes or node_id2 not in self.nodes:

@@ -59,6 +59,15 @@ def _score_keywords(tokens: Iterable[str], keywords: Iterable[str]) -> float:
     keywords_set = set(keywords)
     matches = sum(1 for token in token_list if token in keywords_set)
     return matches / len(token_list)
+import random
+from typing import Any, Dict, List, Optional
+
+from apps.core.context.models import (
+    AffectResult,
+    IntentResult,
+    MemoryLedgerProtocol,
+    MemoryResult,
+)
 
 
 class IntentModel:
@@ -94,6 +103,21 @@ class IntentModel:
             intent_type = "urgent"
 
         confidence = min(0.95, 0.65 + highest_score * 0.3 + urgency_score * 0.2)
+    _INTENT_TYPES = [
+        "technical",
+        "philosophical",
+        "urgent",
+        "casual",
+        "creative",
+    ]
+
+    async def predict(self, query: str) -> IntentResult:
+        """Return a pseudo-random intent prediction for the query."""
+        del query  # The current implementation is stochastic.
+        await asyncio.sleep(0.1)
+        urgency = random.uniform(0.1, 1.0)
+        intent_type = random.choice(self._INTENT_TYPES)
+        confidence = random.uniform(0.7, 0.95)
         return IntentResult(urgency=urgency, type=intent_type, confidence=confidence)
 
 
@@ -130,6 +154,23 @@ class SoulAffectEncoder:
             soul_resonance=resonance,
             emotion=dominant_emotion,
             intensity=intensity,
+    _EMOTIONS = [
+        "fear",
+        "melancholy",
+        "joy",
+        "calm",
+        "curiosity",
+        "determination",
+    ]
+
+    async def encode(self, query: str) -> AffectResult:
+        """Return a pseudo-random affective encoding for the query."""
+        del query
+        await asyncio.sleep(0.1)
+        return AffectResult(
+            soul_resonance=random.uniform(0.1, 1.0),
+            emotion=random.choice(self._EMOTIONS),
+            intensity=random.uniform(0.5, 0.95),
         )
 
 
@@ -156,6 +197,15 @@ class DigitalSoulLedger:
         average_score = sum(scores) / len(scores)
         has_links = average_score >= max(0.2, threshold - 0.5)
         relevance_score = min(1.0, average_score)
+        """Return simulated fragments related to the query."""
+
+        del query, threshold
+        await asyncio.sleep(0.1)
+        has_links = random.random() > 0.3
+        fragments: List[str] = []
+        if has_links:
+            fragments = [f"0x{random.getrandbits(128):032x}" for _ in range(random.randint(1, 3))]
+        relevance_score = random.uniform(0.6, 0.95) if has_links else 0.3
         return MemoryResult(
             has_strong_links=has_links,
             fragments=fragments,
@@ -218,6 +268,20 @@ class QuantumContextAnalyzer:
         self._intent_model = IntentModel()
         self._soul_encoder = SoulAffectEncoder()
         self._ledger = DigitalSoulLedger()
+    def __init__(
+        self,
+        query: str,
+        *,
+        intent_model: IntentModel | None = None,
+        soul_encoder: SoulAffectEncoder | None = None,
+        memory_ledger: Optional[MemoryLedgerProtocol] = None,
+    ) -> None:
+        self.query = query
+        self.context_layers: Dict[str, Any] = {}
+        self.priority_path: str | None = None
+        self._intent_model = intent_model or IntentModel()
+        self._soul_encoder = soul_encoder or SoulAffectEncoder()
+        self._ledger: MemoryLedgerProtocol = memory_ledger or DigitalSoulLedger()
 
     async def analyze(self) -> Dict[str, Any]:
         """Perform asynchronous context analysis across all layers."""

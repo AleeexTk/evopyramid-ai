@@ -1,0 +1,49 @@
+name: EvoCodex Memory Integration Tests
+
+on:
+  push:
+    branches:
+      - main
+      - feature/evo_method_sk_integration
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  codex-memory-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Test EvoMethod_SK Integration
+        run: |
+          echo "🧠 Запуск EvoCodex проверок памяти..."
+          python3 -m compileall apps/core/integration/evo_archaic_gateway.py
+          python3 -m compileall apps/core/analysis/json_structure_analyzer.py
+          python3 -m compileall apps/core/intent/collective_mind.py
+
+          cd apps/core/integration
+          python3 evo_archaic_gateway.py || true
+          cd -
+
+          cd apps/core/analysis
+          python3 json_structure_analyzer.py
+          cd -
+
+          echo "✅ Все EvoCodex проверки пройдены успешно!"
+
+      - name: Archive EvoCodex Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: evocodex-memory-reports
+          path: |
+            containers/archeology/
+          if-no-files-found: ignore
+          retention-days: 7

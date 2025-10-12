@@ -61,10 +61,20 @@ when each role has signed off on their related checklist.
 
 - Keep Termux nodes synchronized with EvoCore by running the sync ritual:
   ```bash
-  scripts/evo-sync.sh
+  bash scripts/termux_evocore_sync.sh [--branch <name>] [--skip-install] [--skip-smoke]
   ```
-  The script should fetch the latest EvoCore configs, update local caches under
-  `~/.config/evocore/`, and run smoke tests for the relevant `apps/` modules.
+  This helper script will clone or update the repository (default branch
+  `main`), refresh Python dependencies, copy `EvoMETA/evo_config.yaml` into
+  `~/.config/evocore/`, and run a lightweight smoke check via
+  `python -m compileall apps/core`. Use the optional flags to target a different
+  branch, skip package installation, or omit the smoke check when resources are
+  constrained. Environment variables such as `REMOTE_URL`, `REPO_DIR`, and
+  `CONFIG_TARGET_DIR` can be exported beforehand to customise where the sync is
+  performed.
+- If automation cannot run (e.g., restricted shell), mirror the same steps
+  manually: `git pull --rebase origin <branch>`, `pip install -r requirements*.txt`,
+  copy `EvoMETA/evo_config.yaml` to `~/.config/evocore/evo_config.yaml`, and run
+  a quick `python -m compileall apps/core` smoke check.
 - Report sync results in GitHub Issues labelled `runtime-sync`.
 
 ### LLM Sessions ↔ Evo Architecture
@@ -93,7 +103,7 @@ when each role has signed off on their related checklist.
 ## Definition of Done
 - [ ] Quality gates pass locally (`ruff check .`, `pytest`)
 - [ ] Documentation updated (README, docs/)
-- [ ] Release notes entry drafted under EvoMETA/Releases.md
+  - [ ] Release notes entry drafted under `docs/RELEASE_NOTES.md`
 ```
 
 ### Ritual Commands
@@ -103,7 +113,7 @@ when each role has signed off on their related checklist.
 | **Bootstrap Env** | Create a local Python environment for apps and scripts. | `python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt` |
 | **Quality Gate Sweep** | Validate linting and tests before PRs. | `ruff check . && pytest` |
 | **Intent Sync** | Align EvoMETA insights with code state. | `git fetch origin && git rebase origin/main` followed by updating `EvoMETA/Backlog.md`. |
-| **Release Prep** | Summarize shipped features and tag release. | `scripts/evo-release-notes.py` (documented in `scripts/README.md`). |
+| **Release Prep** | Summarize shipped features and tag release. | `scripts/evo-release-notes.py --output docs/RELEASE_NOTES.md` → review and commit the updated `docs/RELEASE_NOTES.md`. |
 
 ## Embedding Visual Aids
 
