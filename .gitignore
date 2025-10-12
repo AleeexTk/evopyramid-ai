@@ -43,4 +43,5 @@ coverage.xml
 *.tmp
 *.swp
 *.swo
+evo_memory.xml
 
