@@ -8,6 +8,15 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict
 
+try:  # Runtime optional dependency: EvoLocalContext
+    from apps.core.context import analyze_device, detect_environment
+except Exception:  # pragma: no cover - graceful fallback
+    def detect_environment() -> Dict[str, Any]:  # type: ignore
+        return {"env_type": "unknown"}
+
+    def analyze_device() -> Dict[str, Any]:  # type: ignore
+        return {}
+
 
 @dataclass
 class _TrinityState:
@@ -25,12 +34,16 @@ class TrinityObserver:
 
     def __init__(self) -> None:
         self._state = _TrinityState()
+        self._environment = detect_environment()
+        self._device_metrics = analyze_device()
 
     async def get_current_state(self) -> Dict[str, Any]:
         async with self._state.lock:
             timestamp = datetime.now(timezone.utc).isoformat()
             return {
                 "timestamp": timestamp,
+                "environment": self._environment,
+                "device": self._device_metrics,
                 "observer_mode": self._state.observer_mode,
                 "system_state": {
                     "temporal_coherence": round(self._state.temporal_coherence, 3),
