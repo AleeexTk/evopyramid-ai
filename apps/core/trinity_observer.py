@@ -1,6 +1,15 @@
 import asyncio, os, json
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
+try:  # Prefer EvoLocalContext helpers when available
+    from apps.core.context import analyze_device, detect_environment
+except Exception:  # pragma: no cover - defensive fallback
+    def detect_environment() -> Dict[str, Any]:  # type: ignore
+        return {"env_type": "unknown"}
+
+    def analyze_device() -> Dict[str, Any]:  # type: ignore
+        return {}
 
 REPORT_DIR = "codex_feedback"
 LOG_PATH = "logs/codex_feedback.log"
@@ -45,6 +54,14 @@ class TrinityObserver:
 
 async def main(pause_sec: int = 600):
     observer = TrinityObserver()
+    env_snapshot = detect_environment()
+    device_snapshot = analyze_device()
+    print(
+        "[EvoContext] Trinity Observer running in",
+        env_snapshot.get("env_type", "unknown"),
+    )
+    if device_snapshot:
+        print("[EvoContext] Device metrics captured")
     while True:
         status = await observer.scan()
         feedback = observer.codex_feedback()
