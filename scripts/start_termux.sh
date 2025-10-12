@@ -16,3 +16,6 @@ python -m apps.core.keys.key_loader >/dev/null 2>&1 || true
 mkdir -p logs
 nohup python -m apps.core.observers.trinity_observer > "logs/trinity_run.log" 2>&1 &
 echo "[Evo] Trinity Observer started. Logs → $PWD/logs/trinity_run.log"
+# Запускаем Trinity-Observer в фоне (лог в $HOME/trinity.log)
+nohup python -m apps.core.trinity_observer > "$HOME/trinity.log" 2>&1 &
+echo "[Evo] Trinity Observer started."

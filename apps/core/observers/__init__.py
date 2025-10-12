@@ -34,3 +34,8 @@ def __getattr__(name):
         module = import_module("apps.core.observers.trinity_observer")
         return getattr(module, name)
     raise AttributeError(f"module 'apps.core.observers' has no attribute '{name}'")
+"""Наблюдатели за состоянием EvoPyramid."""
+
+from .trinity_observer import TrinityObserver, trinity_observer
+
+__all__ = ["TrinityObserver", "trinity_observer"]

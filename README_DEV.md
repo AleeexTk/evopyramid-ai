@@ -31,6 +31,13 @@ python3 -m compileall apps/core/integration/evo_archaic_gateway.py
 cd apps/core/analysis && python3 json_structure_analyzer.py
 ```
 
+## Тестирование API
+
+```bash
+# Асинхронные смоук-тесты публичных эндпоинтов
+pytest tests/api/test_endpoints.py
+```
+
 ## Цветовая Кодировка Памяти
 
 - 🟨 Желтый: Базовые концепции
