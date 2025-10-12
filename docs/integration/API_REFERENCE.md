@@ -89,6 +89,9 @@ Returns:
 }
 ```
 
+All metrics are derived from deterministic keyword heuristics, ensuring identical
+results for identical queries across runs.
+
 ### `analyze_and_respond`
 
 ```python

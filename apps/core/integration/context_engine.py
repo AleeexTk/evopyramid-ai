@@ -18,6 +18,10 @@ from apps.core.memory.pyramid_memory import EnhancedDigitalSoulLedger, MemoryFra
 class EvoCodexContextEngine:
     """High-level orchestrator used to process EvoCodex queries."""
 
+    def __init__(self) -> None:
+        self.quantum_analyzer = QuantumContextAnalyzer
+        self.memory_system = PyramidMemory()
+        self.enhanced_ledger = EnhancedDigitalSoulLedger()
     def __init__(self, memory_system: PyramidMemory | None = None) -> None:
         self.quantum_analyzer_cls = QuantumContextAnalyzer
         self.memory_system = memory_system or PyramidMemory()
@@ -37,6 +41,10 @@ class EvoCodexContextEngine:
         self.stats["total_queries"] += 1
 
         try:
+            analyzer = self.quantum_analyzer(query)
+            context = await analyzer.analyze()
+            memory_context = await self.enhanced_ledger.find_related_fragments(query)
+            context["memory"].update(memory_context)
             analyzer = self.quantum_analyzer_cls(
                 query,
                 memory_ledger=self.enhanced_ledger,
