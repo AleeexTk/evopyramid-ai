@@ -103,7 +103,7 @@ when each role has signed off on their related checklist.
 ## Definition of Done
 - [ ] Quality gates pass locally (`ruff check .`, `pytest`)
 - [ ] Documentation updated (README, docs/)
-- [ ] Release notes entry drafted under EvoMETA/Releases.md
+  - [ ] Release notes entry drafted under `docs/RELEASE_NOTES.md`
 ```
 
 ### Ritual Commands
@@ -113,7 +113,7 @@ when each role has signed off on their related checklist.
 | **Bootstrap Env** | Create a local Python environment for apps and scripts. | `python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt` |
 | **Quality Gate Sweep** | Validate linting and tests before PRs. | `ruff check . && pytest` |
 | **Intent Sync** | Align EvoMETA insights with code state. | `git fetch origin && git rebase origin/main` followed by updating `EvoMETA/Backlog.md`. |
-| **Release Prep** | Summarize shipped features and tag release. | `scripts/evo-release-notes.py` (documented in `scripts/README.md`). |
+| **Release Prep** | Summarize shipped features and tag release. | `scripts/evo-release-notes.py --output docs/RELEASE_NOTES.md` → review and commit the updated `docs/RELEASE_NOTES.md`. |
 
 ## Embedding Visual Aids
 
