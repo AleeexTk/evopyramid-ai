@@ -1,5 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -e
+<<<<<<< HEAD
+termux-setup-storage || true
+pip install -U pip
+pip install -r requirements.txt
+python3 apps/core/evo_core.py
+=======
 
 echo "[Evo] Bootstrapping Termux node…"
 pkg update -y
@@ -19,3 +25,4 @@ echo "[Evo] Trinity Observer started. Logs → $PWD/logs/trinity_run.log"
 # Запускаем Trinity-Observer в фоне (лог в $HOME/trinity.log)
 nohup python -m apps.core.trinity_observer > "$HOME/trinity.log" 2>&1 &
 echo "[Evo] Trinity Observer started."
+>>>>>>> main

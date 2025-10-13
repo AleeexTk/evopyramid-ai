@@ -28,6 +28,11 @@ safely.
 - Contributors must follow the [Code of Conduct](CODE_OF_CONDUCT.md) and review
   the [Contributing Guide](CONTRIBUTING.md).
 
+<<<<<<< HEAD
+## Documentation
+
+- Architecture notes live in `docs/ARCHITECTURE.md`.
+=======
 ## Configuration
 
 Runtime configuration for the API layer is managed through environment
@@ -52,8 +57,17 @@ repository root.
   `docs/EVO_COLLAB_GUIDE.md`.
 - Universal activation ritual for syncing any LLM with the architecture lives in
   `docs/EVO_SUMMON.md`.
+>>>>>>> main
 - Additional ADRs will be located under `docs/adr/`.
 
 ## Community
 
 For questions or proposals, open an issue or email maintainers@evopyramid.ai.
+<<<<<<< HEAD
+
+## Quick Run
+
+- **Termux (Android):** `bash scripts/start_termux.sh`
+- **Local workstation:** `bash scripts/start_local.sh`
+=======
+>>>>>>> main
