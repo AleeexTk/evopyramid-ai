@@ -175,6 +175,24 @@ After every 24 hours or major merge:
 
 ---
 
+## 1️⃣6️⃣ EvoContext Split Protocol (ECSP)
+
+- **Detect the execution surface** on bootstrap via `scripts/evo_context_detector.py`.
+- If `surface == termux`:
+  - Limit behavior to runtime rituals (`scripts/evo_runner.sh`, Trinity Observer logging).
+  - Never restructure the repository or initiate PR workflows.
+  - Prefer lightweight, offline synchronization paths.
+- If `surface == desktop`:
+  - Enable full architectural editing, manifest updates, and Git-based collaboration.
+  - Author Pull Requests and coordinate Codex feedback cycles.
+  - Maintain EvoMemory alignment with structural changes.
+- If `surface == cloud`:
+  - Restrict execution to CI/CD verification, artifact publication, and metrics synthesis.
+  - Avoid manual edits; operate through workflows and automated jobs.
+- If detection is inconclusive → default to `desktop` while alerting the Observer loop.
+
+---
+
 ## 📎 Companion Usage
 
 Place this charter within `docs/` so it can be surfaced rapidly alongside the initialization prompt. Pairing both documents ensures consistent governance for online Codex interactions and local automation agents alike.

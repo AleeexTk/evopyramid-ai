@@ -93,6 +93,22 @@ api_endpoints:
 }
 ```
 
+### EvoContext Split Protocol (ECSP)
+
+| Поверхность | Tier               | Роль по умолчанию                           | Лог-категория     |
+| ----------- | ------------------ | ------------------------------------------- | ----------------- |
+| Termux      | Runtime-Mobile     | Trinity Observer, локальные CI-проверки     | `runtime-mobile`  |
+| Desktop     | Dev-Workstation    | Архитектурное редактирование и Codex-потоки | `dev-desktop`     |
+| Cloud       | CI/CD Synchronizer | Автоматизированные пайплайны и отчёты       | `sync-cloud`      |
+
+ECSP описан в `EVO_CONTEXT_MATRIX.yaml` и синхронизируется с секцией
+`environment_matrix` внутри `EVO_SYNC_MANIFEST.yaml`. Перед выполнением
+ритуалов Codex и Trinity вызывается `scripts/evo_context_detector.py`,
+который определяет активную поверхность и экспортирует переменную
+`EVO_ACTIVE_SURFACE`. Это гарантирует, что Termux-узлы остаются лёгкими,
+Desktop-узлы получают права на архитектурные изменения, а Cloud-пайплайны
+сфокусированы на CI/CD и публикации артефактов.
+
 ## Безопасность как первоклассная роль
 
 ### Provocateur Security Matrix
