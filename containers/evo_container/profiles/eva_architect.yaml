@@ -1,0 +1,10 @@
+name: Eva Architect
+role: structural_designer
+focus:
+  - blueprinting
+  - simulation
+telemetry:
+  sync: evo_mist
+  priority: medium
+pipelines:
+  - link_import_to_memory
