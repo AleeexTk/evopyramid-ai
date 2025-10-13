@@ -1,16 +1,22 @@
-<<<<<<< HEAD
 #!/usr/bin/env bash
-set -e
-python3 -m pip install -U pip
-python3 -m pip install -r requirements.txt
-python3 apps/cli/evocodex_shell.py <<'EOF'
-diagnose
-=======
-Write-Output "[Evo] Local bootstrap…"
-if (Test-Path .\venv) {} else { python -m venv venv }
-.\venv\Scripts\activate
-if (Test-Path requirements.txt) { pip install -r requirements.txt }
-if (Test-Path requirements_context.txt) { pip install -r requirements_context.txt }
+set -euo pipefail
+
+echo "[Evo] Local bootstrap…"
+
+if [ ! -d .venv ]; then
+  python -m venv .venv
+fi
+
+# shellcheck disable=SC1091
+source .venv/bin/activate
+
+pip install -U pip
+if [ -f requirements.txt ]; then
+  pip install -r requirements.txt
+fi
+if [ -f requirements_context.txt ]; then
+  pip install -r requirements_context.txt
+fi
+
 python -m apps.core.observers.trinity_observer
 python -m apps.core.trinity_observer
->>>>>>> main
