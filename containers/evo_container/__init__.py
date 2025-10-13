@@ -1,3 +1,6 @@
+"""Self-processing container module initialization."""
+
+from .cli import run_pipeline  # noqa: F401
 """Evo Container package.
 
 This namespace exposes the high-level primitives that orchestrate the

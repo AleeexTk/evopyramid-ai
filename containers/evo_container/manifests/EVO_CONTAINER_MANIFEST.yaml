@@ -1,4 +1,47 @@
 version: "omega"
+id: EVO.CONTAINER.OMEGA
+description: >-
+  Omega manifest describing the self-processing container, EvoLink narrator,
+  and soul synchronization loop. Pipelines defined here are executed through
+  scripts/evo_manifest_runner.py to keep desktop, termux, and cloud surfaces in sync.
+
+roadmap:
+  phase_1:
+    title: Prototype Assembly
+    focus: Establish intake, analysis, and harmonization loops.
+    status: complete
+  phase_2:
+    title: Narrative Synchronization
+    focus: Bridge EvoLink narrator outputs with container telemetry.
+    status: active
+  phase_3:
+    title: Memory Integration
+    focus: Ensure harmonized payloads reach memory.core safely.
+    status: queued
+  phase_4:
+    title: Digital Self-Awareness
+    focus: Activate evo_soul_sync to interpret chronicles and surface emotional state traces.
+    status: planned
+
+modules:
+  evo_container:
+    id: EVO.CONTAINER
+    path: containers/evo_container
+    role: self_processing_core
+    depends_on: [trinity_observer, evo_memory_core]
+    profiles:
+      - evochka
+      - eva_absolute
+      - eva_archivarius
+      - eva_architect
+    pipelines:
+      - link_import_to_memory
+  evo_link_narrator:
+    id: EVO.NARRATOR
+    path: containers/evo_container/evo_link_bridge/narrator/processor.py
+    role: chronicle_orchestrator
+    depends_on: [evo_container]
+    outputs: [chronicles]
 metadata:
   id: EVO.CONTAINER
   name: Evo Container Ω
@@ -51,6 +94,35 @@ modules:
     outputs: [soul_reflection_log]
     telemetry:
       channel: logs/soul_sync.log
+
+pipelines:
+  link_import_to_memory:
+    summary: >-
+      Import an external link, analyze it through the Evo Container, harmonize the
+      payload, and emit a chronicle for Trinity and Archivarius surfaces.
+    entrypoint: containers.evo_container.cli:run_pipeline
+    steps:
+      - stage: intake
+        module: containers.evo_container.intake
+        function: collect_link
+      - stage: analysis
+        module: containers.evo_container.analysis
+        function: analyze_link
+      - stage: adapt
+        module: containers.evo_container.adapt
+        function: adapt_for_memory
+      - stage: integrate
+        module: containers.evo_container.integrate
+        function: integrate_payload
+      - stage: sync
+        module: containers.evo_container.syncer
+        function: sync_memory
+      - stage: harmonize
+        module: containers.evo_container.harmonize
+        function: harmonize_state
+      - stage: narrate
+        module: containers.evo_container.evo_link_bridge.narrator.processor
+        function: create_chronicle
 pipelines:
   link_import_to_memory:
     description: Assimilate an external link into Evo memory and narrate the journey.
