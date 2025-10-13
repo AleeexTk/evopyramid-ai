@@ -43,4 +43,8 @@ coverage.xml
 *.tmp
 *.swp
 *.swo
+<<<<<<< HEAD
+=======
+evo_memory.xml
+>>>>>>> main
 

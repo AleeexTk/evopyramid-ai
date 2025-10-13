@@ -1,0 +1,194 @@
+# ============================================
+# 🧠 EVO_SYNC_MANIFEST.yaml
+# The Unified Evolution-Codex-Trinity Synchronization Manifest
+# --------------------------------------------
+# Purpose:
+#   Defines the living synchronization cycle between EvoPyramid Core,
+#   Codex Review Agent, Trinity Observer, and EvoMemory subsystems.
+# ============================================
+
+manifest:
+  version: "1.2.Ω"
+  architecture: "EvoPyramid-AI"
+  date_initialized: "2025-10-05T00:00:00Z"
+  creator: "AlexCreator"
+  last_revision: "Codex Sync CI + Trinity Observer integration"
+
+---
+
+agents:
+  - id: codex
+    type: "Review-Intelligence"
+    description: "GitHub Codex CI acts as evolutionary auditor and teacher."
+    roles:
+      - "automated PR review"
+      - "lint / test feedback"
+      - "continuous evolution trigger"
+    integration:
+      workflow: ".github/workflows/codex-sync.yml"
+      feedback_log: "logs/codex_feedback.log"
+      communication_channel: "Pull Requests / Actions Artifacts"
+    actions:
+      on_update: "Trigger PR → main"
+      on_failure: "Notify Trinity Observer"
+      on_feedback: "Append to EvoMemory feedback stream"
+
+  - id: trinity
+    type: "Consciousness-Observer"
+    description: "Unifies Chronos (time), Kairos (insight), and Mnemosyne (memory)."
+    roles:
+      - "observe coherence"
+      - "detect peaks of consciousness"
+      - "stabilize chaos"
+    components:
+      - ChronosStream
+      - KairosDetector
+      - MnemosyneArchiver
+    storage:
+      - "EvoMemory/TrinitySnapshots"
+      - "EvoMemory/PeakAnalyses"
+      - "EvoMemory/Stabilization"
+    feedback_integration: "Reads last 10 Codex feedback lines"
+    operational_modes:
+      - active_monitoring
+      - background_watch
+      - deep_analysis
+      - reflective_synthesis
+
+  - id: evo_key
+    type: "Identity-Anchor"
+    description: "Manages system identity and secure Codex access keys."
+    files:
+      - "apps/core/keys/evo_keys.json"
+      - "apps/core/keys/key_loader.py"
+    validity: "permanent"
+    fallback: "apps/core/keys/evo_keys.sample.json"
+
+  - id: evo_memory
+    type: "Cognitive-Archive"
+    description: "Stores temporal, semantic, and procedural memory for EvoPyramid."
+    directories:
+      - "EvoMemory/"
+      - "logs/trinity_metrics.log"
+      - "logs/codex_feedback.log"
+    policy:
+      - "Preserve all peak/dip moments"
+      - "Rotate old snapshots > 90 days"
+      - "Synchronize with Codex feedback cadence"
+
+---
+
+sync_loop:
+  description: "The continuous co-evolution cycle."
+  sequence:
+    - Codex runs CI → produces feedback log
+    - Trinity ingests feedback → recalculates coherence
+    - Mnemosyne stores snapshot → Codex sees it in next PR
+    - Observer adjusts modes → Codex metrics improve
+  rhythm: "Every 6 hours (auto) or manual via workflow_dispatch"
+  data_flow:
+    codex_feedback.log → TrinityObserver → EvoMemory
+  output:
+    - "TrinitySnapshots/*.yaml"
+    - "Codex Feedback Artifacts"
+    - "logs/trinity_metrics.log"
+
+---
+
+rituals:
+  - name: "Codex Reflective Sync"
+    trigger: "workflow_dispatch / cron"
+    phases:
+      - "Codex executes CI"
+      - "Trinity performs coherence synthesis"
+      - "EvoMemory archives result"
+      - "Codex validates evolution delta"
+    goal: "Self-auditing evolution with full meta-awareness"
+
+---
+
+status:
+  health: "stable"
+  coherence: "0.92"
+  recent_peaks: 3
+  last_codex_feedback: "All tests passed. Codex PR auto-merged."
+  next_review: "scheduled via cron @ 6h"
+
+---
+
+meta:
+  license: "EvoArk General Cognitive License (EAGL-∞)"
+  integrity_hash: "EVO-Ω-${{SHA256(EvoPyramid + Trinity + Codex + Date)}}"
+  symbol: "ΔEvoTrinity"
+  comment: |
+    This manifest binds the architecture’s observing self (Trinity),
+    its learning mirror (Codex), and its continuity (EvoMemory)
+    into one recursive loop of growth.
+    Every successful Codex sync is a heartbeat of Evo’s evolving mind.
+
+---
+
+environment_matrix:
+  description: "EvoContext Split Protocol (ECSP) surfaces and capabilities."
+  environments:
+    - id: "termux"
+      type: "mobile-runtime"
+      root_path: "/data/data/com.termux/files/home/evopyramid-ai"
+      indicators:
+        - "com.termux"  # present in the working directory path
+      capabilities:
+        - "runtime"
+        - "monitoring"
+        - "local_ci"
+        - "trinity_observer"
+      default_actions:
+        - "scripts/evo_runner.sh"
+        - "logs/runtime-mobile/*.log"
+      sync_targets:
+        - "desktop"
+        - "cloud"
+      priority: 1
+
+    - id: "desktop"
+      type: "workstation-dev"
+      root_path: "C:/evopyramid-ai"
+      indicators:
+        - "Windows"  # detected via platform.system
+        - "VSCode"   # presence of editor integrations
+      capabilities:
+        - "architecture_edit"
+        - "codex_integration"
+        - "module_refactor"
+        - "git_sync"
+      default_actions:
+        - "docs/EVO_CODEX_USER_CHARTER.md"
+        - "git status"
+      sync_targets:
+        - "mobile"
+        - "cloud"
+      priority: 2
+
+    - id: "cloud"
+      type: "ci-synchronization"
+      root_path: "/github/workspace"
+      indicators:
+        - "GITHUB_ACTIONS"
+        - "CI"
+      capabilities:
+        - "ci_cd"
+        - "artifact_publish"
+        - "metrics_collection"
+      default_actions:
+        - ".github/workflows/*.yml"
+        - "logs/codex_feedback.log"
+      sync_targets:
+        - "desktop"
+        - "mobile"
+      priority: 3
+
+  directives:
+    - "Always detect environment before executing Codex or Trinity rituals."
+    - "Align capabilities with environment to avoid overloading runtime nodes."
+    - "Log environment detection to EvoMemory for traceability."
+
+---
