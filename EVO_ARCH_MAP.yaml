@@ -43,6 +43,24 @@ lineages:
       - "Chronos"
       - "Kairos"
 
+  - id: "love_protocol_guardian"
+    name: "Love Protocol Sentinel"
+    tier: "Structural"
+    parent: ".github/workflows"
+    anchor: ".github/workflows/codex-love-check.yml"
+    description: |
+      Continuous integration sentinel that enforces canonical integrity of
+      `manifests/EVO_LOVE_PROTOCOL.yaml` and validates its YAML structure before
+      merges.
+    doc_links:
+      - "docs/README_LOVE.md"
+    sync_references:
+      - "EVO_SYNC_MANIFEST.yaml::agents.love_protocol_guardian"
+    status: "active"
+    tags:
+      - "Chronos"
+      - "Logos"
+
 notes:
   - "Every new subsystem must declare lineage here to avoid architectural orphans."
   - "Tags map layers of the Chronos/Kairos/Logos triad for rapid orientation."

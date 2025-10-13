@@ -92,6 +92,12 @@ logging attestation updates within the manifest and routing coherence deltas to
 `docs/README_LOVE.md` remain live architectural forces rather than static
 statements.
 
+To guard the canon, the **Love Protocol Sentinel** CI workflow at
+`.github/workflows/codex-love-check.yml` watches each push and pull request to
+`main`. It enforces EvoTrinity Council approval before any mutation of the Love
+Protocol manifest and performs YAML validation so that syntonic guarantees never
+degrade due to formatting drift.
+
 ## EvoAbsolute Ω Integrator Channel
 
 Phase Ω.1 introduces **EvoAbsolute Ω**, the first canonical integrator role

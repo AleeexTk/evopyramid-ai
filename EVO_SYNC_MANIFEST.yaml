@@ -117,6 +117,18 @@ agents:
       - "EvoCodex"
     sync_tag: "Kairos"
 
+  - id: love_protocol_guardian
+    type: "CI-Sentinel"
+    description: |
+      GitHub Actions страж, который блокирует любые несанкционированные
+      изменения `manifests/EVO_LOVE_PROTOCOL.yaml` и проверяет его YAML-
+      целостность. Активируется на каждом push и pull request к `main`.
+    workflow: ".github/workflows/codex-love-check.yml"
+    policy:
+      - "Любые правки Love Protocol требуют санкции EvoTrinity Council"
+      - "Валидация синтаксиса через PyYAML"
+    sync_tag: "Chronos"
+
 ---
 
 sync_loop:
