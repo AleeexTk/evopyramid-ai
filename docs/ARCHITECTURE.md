@@ -74,3 +74,21 @@ container's tone with the chosen persona.
 
 Future evolutions should extend this document with new subsystems, ensuring the
 architecture snapshot always reflects the organism's active lineage.
+
+## Dependency Cartography & Textual Ingest
+
+`apps/core/context/evo_dependency_scanner.py` sits within the Context tier and
+performs three intertwined roles for Trinity-4:
+
+- 🔍 **Code Cartography** – parses Python imports across the registered roots
+  and writes `logs/evo_dependency_map.json`, giving Architect and Scientist
+  personas a live dependency graph.
+- 🌊 **Artifact Wave Detection** – records log/cache/tmp timelines to surface
+  bursts of secondary artefacts that accompany framework executions.
+- 📝 **Evo Ingest Priority Stream** – copies `.txt` archives larger than 10 KB
+  into `data/evo_ingest/pending/raw/` and forges annotated twins under
+  `data/evo_ingest/pending/annotated/`. These texts become prime nutrition for
+  Archivarius and SoulSync before being promoted to `data/evo_ingest/processed/`.
+
+This lattice keeps knowledge ingestion harmonised with structural awareness,
+ensuring EvoPyramid can trace how memory growth relates to code evolution.

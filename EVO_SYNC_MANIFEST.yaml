@@ -76,6 +76,21 @@ agents:
       - "Rotate old snapshots > 90 days"
       - "Synchronize with Codex feedback cadence"
 
+  - id: evo_dependency_scanner
+    type: "Context-Extractor"
+    description: "Maps code imports and harvests priority text corpora for ingestion."
+    files:
+      - "apps/core/context/evo_dependency_scanner.py"
+    outputs:
+      - "logs/evo_dependency_map.json"
+      - "logs/evo_dependency_report.log"
+      - "data/evo_ingest/pending/raw/"
+      - "data/evo_ingest/pending/annotated/"
+    policy:
+      - ".txt archives >10 KB receive ingestion priority"
+      - "Skip evo_ingest directories to avoid recursive echoes"
+      - "Log artifact waves for Trinity correlation"
+
 ---
 
 sync_loop:
