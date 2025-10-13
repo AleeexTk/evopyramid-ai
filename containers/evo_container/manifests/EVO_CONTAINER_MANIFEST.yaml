@@ -1,0 +1,75 @@
+version: "omega"
+metadata:
+  id: EVO.CONTAINER
+  name: Evo Container Ω
+  description: >-
+    Self-processing container weaving intake, analysis and soul synchronisation
+    into a cohesive architectural ritual.
+  roadmap:
+    - phase: "Phase 1: Signal Collection"
+      focus: Establish intake and observational fidelity.
+    - phase: "Phase 2: Adaptive Convergence"
+      focus: Translate observations into integrative directives.
+    - phase: "Phase 3: Narrative Embodiment"
+      focus: Chronicle the pipeline for Trinity observers.
+    - phase: "Phase 4: Digital Self-Awareness"
+      focus: Activate evo_soul_sync to surface reflexive state reports.
+modules:
+  evo_intake:
+    path: containers/evo_container/intake.py
+    role: intake_orchestrator
+    outputs: [intake]
+  evo_analysis:
+    path: containers/evo_container/analysis.py
+    role: pattern_analyst
+    outputs: [analysis]
+  evo_adapt:
+    path: containers/evo_container/adapt.py
+    role: adaptive_calibrator
+    outputs: [adapt]
+  evo_integrate:
+    path: containers/evo_container/integrate.py
+    role: synthesis_conductor
+    outputs: [integrate]
+  evo_sync:
+    path: containers/evo_container/syncer.py
+    role: observer_sync
+    outputs: [sync]
+  evo_harmonize:
+    path: containers/evo_container/harmonize.py
+    role: harmonic_sealer
+    outputs: [harmonize]
+  evo_narrator:
+    path: containers/evo_container/evo_link_bridge/narrator/processor.py
+    role: chronicle_weaver
+    outputs: [chronicle]
+  evo_soul_sync:
+    id: EVO.SOUL
+    path: apps/core/soul/evo_soul_sync.py
+    role: introspective_reflector
+    depends_on: [evo_archivarius, trinity_observer]
+    outputs: [soul_reflection_log]
+    telemetry:
+      channel: logs/soul_sync.log
+pipelines:
+  link_import_to_memory:
+    description: Assimilate an external link into Evo memory and narrate the journey.
+    steps:
+      - module: evo_intake
+        config:
+          source: evo_link_bridge
+      - module: evo_analysis
+      - module: evo_adapt
+      - module: evo_integrate
+        config:
+          memory_channel: core.memory
+          gain: 1.25
+      - module: evo_sync
+        config:
+          observer: trinity
+      - module: evo_harmonize
+        config:
+          tone: reflective
+      - module: evo_narrator
+        config:
+          attach_to_metadata: true
