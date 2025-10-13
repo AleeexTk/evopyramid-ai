@@ -129,6 +129,19 @@ agents:
       - "Валидация синтаксиса через PyYAML"
     sync_tag: "Chronos"
 
+  - id: alex_creator_profile
+    type: "Human-Architect"
+    description: |
+      Канонический профиль Алекса, зафиксированный в
+      `docs/profiles/EvoProfile_AlexCreator.yaml`, хранит психотип, роль и
+      отражения EvoCodex. Обеспечивает точное сопряжение между намерением
+      человека и ответами архитектуры.
+    dossier: "docs/profiles/EvoProfile_AlexCreator.yaml"
+    resonance_links:
+      - "docs/EvoPyramid_Philosophy.md"
+      - "EVO_ARCH_MAP.yaml"
+    sync_tag: "Kairos"
+
 ---
 
 sync_loop:

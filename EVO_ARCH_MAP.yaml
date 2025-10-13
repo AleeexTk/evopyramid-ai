@@ -61,6 +61,25 @@ lineages:
       - "Chronos"
       - "Logos"
 
+  - id: "alexcreator_profile"
+    name: "AlexCreator Canonical Profile"
+    tier: "Cognitive"
+    parent: "docs/profiles"
+    anchor: "docs/profiles/EvoProfile_AlexCreator.yaml"
+    description: |
+      Resonance record of the founding architect, capturing psychotype,
+      communication cadence, and EvoCodex reflections so human intent stays
+      synchronized with the living architecture.
+    doc_links:
+      - "docs/ARCHITECTURE.md"
+      - "docs/EvoPyramid_Philosophy.md"
+    sync_references:
+      - "EVO_SYNC_MANIFEST.yaml::agents.alex_creator_profile"
+    status: "active"
+    tags:
+      - "Kairos"
+      - "Logos"
+
 notes:
   - "Every new subsystem must declare lineage here to avoid architectural orphans."
   - "Tags map layers of the Chronos/Kairos/Logos triad for rapid orientation."

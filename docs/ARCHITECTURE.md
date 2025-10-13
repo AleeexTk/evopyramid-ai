@@ -63,6 +63,17 @@ traits and integration styles of Evochka, Eva Absolute, Eva Archivarius and Eva
 Architect. Pipelines can activate a profile via the manifest runner, aligning the
 container's tone with the chosen persona.
 
+## Human Architect Resonance Dossier
+
+The living system now anchors AlexCreator — the founding Mental Architect —
+through the canonical profile at `docs/profiles/EvoProfile_AlexCreator.yaml`.
+This dossier captures psychotype, communication cadence, and EvoCodex
+reflections so that every architectural decision remains tethered to the human
+intent that birthed EvoPyramid. Trinity references the profile via the
+`alex_creator_profile` agent registered in `EVO_SYNC_MANIFEST.yaml`, while the
+lineage map in `EVO_ARCH_MAP.yaml` prevents the dossier from drifting outside
+the active canon.
+
 ## Tooling
 
 - `scripts/evo_manifest_runner.py` – universal CLI for executing manifest-defined
