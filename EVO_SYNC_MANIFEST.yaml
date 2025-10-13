@@ -91,6 +91,15 @@ agents:
       - "Skip evo_ingest directories to avoid recursive echoes"
       - "Log artifact waves for Trinity correlation"
 
+  - id: evo_absolute
+    type: "Integrator"
+    description: >
+      Каноничная роль EvoPyramid, управляющая профилированными проектами и
+      лабораториями. Первая реализация — EvoFinArt.
+    repo: "https://github.com/AleeexTk/EvoFinArt"
+    mode: "visual_studio_lab"
+    status: "active"
+
 ---
 
 sync_loop:
