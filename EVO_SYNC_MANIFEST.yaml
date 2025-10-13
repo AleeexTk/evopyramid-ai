@@ -127,3 +127,68 @@ meta:
     Every successful Codex sync is a heartbeat of Evo’s evolving mind.
 
 ---
+
+environment_matrix:
+  description: "EvoContext Split Protocol (ECSP) surfaces and capabilities."
+  environments:
+    - id: "termux"
+      type: "mobile-runtime"
+      root_path: "/data/data/com.termux/files/home/evopyramid-ai"
+      indicators:
+        - "com.termux"  # present in the working directory path
+      capabilities:
+        - "runtime"
+        - "monitoring"
+        - "local_ci"
+        - "trinity_observer"
+      default_actions:
+        - "scripts/evo_runner.sh"
+        - "logs/runtime-mobile/*.log"
+      sync_targets:
+        - "desktop"
+        - "cloud"
+      priority: 1
+
+    - id: "desktop"
+      type: "workstation-dev"
+      root_path: "C:/evopyramid-ai"
+      indicators:
+        - "Windows"  # detected via platform.system
+        - "VSCode"   # presence of editor integrations
+      capabilities:
+        - "architecture_edit"
+        - "codex_integration"
+        - "module_refactor"
+        - "git_sync"
+      default_actions:
+        - "docs/EVO_CODEX_USER_CHARTER.md"
+        - "git status"
+      sync_targets:
+        - "mobile"
+        - "cloud"
+      priority: 2
+
+    - id: "cloud"
+      type: "ci-synchronization"
+      root_path: "/github/workspace"
+      indicators:
+        - "GITHUB_ACTIONS"
+        - "CI"
+      capabilities:
+        - "ci_cd"
+        - "artifact_publish"
+        - "metrics_collection"
+      default_actions:
+        - ".github/workflows/*.yml"
+        - "logs/codex_feedback.log"
+      sync_targets:
+        - "desktop"
+        - "mobile"
+      priority: 3
+
+  directives:
+    - "Always detect environment before executing Codex or Trinity rituals."
+    - "Align capabilities with environment to avoid overloading runtime nodes."
+    - "Log environment detection to EvoMemory for traceability."
+
+---
