@@ -75,6 +75,23 @@ container's tone with the chosen persona.
 Future evolutions should extend this document with new subsystems, ensuring the
 architecture snapshot always reflects the organism's active lineage.
 
+## EvoAbsolute Ω Integrator Channel
+
+Phase Ω.1 introduces **EvoAbsolute Ω**, the first canonical integrator role
+dedicated to bridging EvoPyramid with satellite laboratories. The role lives
+under `roles/evo_absolute/` and exposes:
+
+- `role_manifest.yaml` — declarative metadata for Trinity and Codex loops.
+- `lab/visual_env_adapter.py` — the orchestration entrypoint for Visual Studio
+  environments such as EvoFinArt.
+- `lab/EvoFinArt/*` — embedded manifests and stubs mirroring the external
+  repository to keep the architecture aware of laboratory state.
+
+When `python -m roles.evo_absolute.lab.visual_env_adapter` runs (manually or via
+CI) it emits `EvoAbsolute.link_event` payloads captured by Trinity Observer and
+logged to `logs/evo_absolute/`. This establishes the bidirectional EvoLink
+bridge required for future laboratories.
+
 ## Dependency Cartography & Textual Ingest
 
 `apps/core/context/evo_dependency_scanner.py` sits within the Context tier and

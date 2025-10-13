@@ -12,6 +12,7 @@ from enum import Enum
 import importlib
 import importlib.util
 import inspect
+from pathlib import Path
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 import yaml
@@ -54,6 +55,14 @@ class TrinityObserver:
         self.memory_snapshots: List[Dict[str, Any]] = []
         self.trinity_history: List[Dict[str, Any]] = []
         self.trinity_handlers: List[Callable[[Dict[str, Any]], Awaitable[None] | None]] = []
+        self.external_channels: Dict[str, List[Dict[str, Any]]] = {}
+
+        self._external_log_root = Path("logs") / "evo_absolute"
+        try:
+            self._external_log_root.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            # Logging is best-effort; continue if directory cannot be created.
+            pass
 
         self._tasks: List[asyncio.Task[None]] = []
         self._is_running = False
@@ -100,6 +109,40 @@ class TrinityObserver:
                 print("⚠️ Trinity: FlowMonitor handler interface not available")
         else:
             print("⚠️ Trinity: FlowMonitor not available")
+
+    def register_external_event(self, channel: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Record an event emitted by an external Evo role."""
+
+        event = {
+            "channel": channel,
+            "payload": payload,
+            "ts": datetime.now(UTC).isoformat(),
+        }
+        self.external_channels.setdefault(channel, []).append(event)
+
+        log_name = channel.replace(".", "_") + ".log"
+        log_path = self._external_log_root / log_name
+        try:
+            with log_path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(event, ensure_ascii=False) + "\n")
+        except OSError as exc:
+            print(f"Trinity external log error: {exc}")
+
+        return event
+
+    def record_evoabsolute_link_event(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Specialised helper for EvoAbsolute link events."""
+
+        event = self.register_external_event("evo_absolute.link", payload)
+        self.temporal_events.append(
+            {
+                "type": "external_link",
+                "source": "EvoAbsolute",
+                "status": payload.get("status", "unknown"),
+                "ts": event["ts"],
+            }
+        )
+        return event
 
     async def start_observation(self, session_config: Optional[Dict[str, Any]] = None) -> None:
         """Start Trinity observation routines."""
