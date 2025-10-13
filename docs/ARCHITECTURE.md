@@ -151,3 +151,10 @@ Desktop-узлы получают права на архитектурные и�
 
 - ADR-2024-06-09 фиксирует стратегию интеграции прототипа Avokey/EvoNeuronCore как исследовательской возможности внутри контуров Context Engine. См. `docs/adr/ADR-20240609-avokey-evoneuroncore-integration.md` для деталей о фичефлагах и границах безопасности.
 >>>>>>> main
+
+## EvoContainer Ω Subsystem
+
+- `containers/evo_container/` hosts the self-processing pipeline (intake → analysis → adapt → integrate → sync → harmonize).
+- `containers/evo_container/evo_link_bridge/narrator/` renders chronicles that Archivarius can archive.
+- `apps/core/soul/evo_soul_sync.py` reads chronicles and writes reflections to `logs/soul_sync.log`.
+- `scripts/evo_manifest_runner.py` exposes a CLI for running manifest-defined pipelines and inspecting manifests.
