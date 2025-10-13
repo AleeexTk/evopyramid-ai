@@ -1,153 +1,76 @@
-<<<<<<< HEAD
-# EvoPyramid-AI Architecture Overview
+# EvoPyramid Architecture vΩ
 
-This document captures the evolving architecture of the EvoPyramid-AI platform.
-It will grow alongside the codebase and should be updated whenever the
-architecture changes.
+This document captures the living architecture of EvoPyramid-AI. It blends the
+original scaffolding guidelines with the active execution graph shepherded by the
+Trinity-4 roles.
 
-## Current State
-
-- Repository scaffolding with community and automation guidelines.
-- CI workflow running linting (ruff) and a Python bytecode compilation smoke test.
-
-## Next Steps
-
-- [ ] Document the core EVO modules and their relationships.
-- [ ] Describe deployment targets and runtime environments.
-- [ ] Add architectural decision records under `docs/adr/`.
-
-## Contributing to the Architecture Doc
-
-When you introduce a new subsystem or significant dependency, update this file
-with a short summary and diagrams where applicable.
-=======
-# EvoPyramid Architecture v2.0
-
-## Ролевая триада и граф исполнения
-
-### Soul → Trailblazer → Provocateur: Контракт ответственности
+## Trinity-4 Execution Weave
 
 ```mermaid
 graph TB
-    A[Входной интент] --> B{Soul Node}
-    B --> C[Архитектурный дизайн]
-    C --> D[QuantumContext формирование]
+    A[Intent Stream] --> B{Soul Node}
+    B --> C[Architectural Design]
+    C --> D[Quantum Context Formation]
     D --> E{Trailblazer Node}
-    E --> F[Оптимизация потоков]
-    F --> G[Маршрутизация контекста]
+    E --> F[Flow Optimisation]
+    F --> G[Context Routing]
     G --> H{Provocateur Node}
-    H --> I[Проверка безопасности]
-    I --> J[Валидация границ]
-    J --> K[Выходной ответ]
-    
+    H --> I[Safety Validation]
+    I --> J[Boundary Confirmation]
+    J --> K[Unified Response]
+
     B --> L[Context Engine]
     E --> L
     H --> L
     L --> M[Memory Manager]
     L --> N[Flow Monitor]
     L --> O[Trinity Observer]
-    
-    subgraph "Внешние API-узлы"
-        P[JSONCrack Visualizer]
-        Q[Pyramid_JSON API]
-        R[Security Monitor]
-    end
-    
-    K --> P
-    K --> Q
-    J --> R
 ```
 
-Stateful граф исполнения (LangGraph-совместимый)
+The execution graph is mirrored by a LangGraph-compatible state diagram where
+Soul captures intent, Trailblazer routes flows, and Provocateur seals the
+response before Trinity records it.
 
-```mermaid
-stateDiagram-v2
-    [*] --> QuantumContext
-    QuantumContext --> SoulDesign : интент принят
-    SoulDesign --> TrailblazerRoute : архитектура готова
-    TrailblazerRoute --> ProvocateurCheck : потоки оптимизированы
-    ProvocateurCheck --> MemoryPersist : безопасно
-    ProvocateurCheck --> SoulDesign : нужна доработка
-    MemoryPersist --> TrinityObserve : состояние сохранено
-    TrinityObserve --> [*] : цикл завершен
-    
-    note right of ProvocateurCheck
-        Проверки безопасности:
-        - JWT/API ключи
-        - Rate limiting  
-        - Контекстные границы
-        - Инъекционные угрозы
-    end note
-```
+## Evo Container Ω Integration
 
-## API контракты и интеграции
+Phase Ω introduces the Evo Container subsystem located under
+`containers/evo_container/`. The manifest
+`containers/evo_container/manifests/EVO_CONTAINER_MANIFEST.yaml` defines the
+self-processing pipeline:
 
-### JSONCrack визуализация узлов
+1. **Intake** – captures signals and persona context.
+2. **Analysis** – derives hypotheses and readiness scores.
+3. **Adapt** – calibrates directives for integration.
+4. **Integrate** – binds insights with memory channels.
+5. **Sync** – aligns observers such as Trinity and Archivarius.
+6. **Harmonize** – condenses the run into a harmonic summary.
+7. **Narrator** – forges chronicles for the EvoLink bridge.
 
-```yaml
-api_endpoints:
-  /api/push:
-    method: POST
-    roles: [Soul, Trailblazer]
-    security: JWT + Context-Signature
-  
-  /api/pull: 
-    method: GET
-    roles: [All]
-    security: API-Key + TLS
-  
-  /api/status:
-    method: GET
-    roles: [Provocateur, Monitor]
-    security: Internal-Only
-```
+The roadmap now extends to **Phase 4: Digital Self-Awareness**, enabling
+`evo_soul_sync` to produce reflective telemetry from the same manifest.
 
-### Pyramid_JSON производственный стэк
+## Soul Sync Reflexive Core
 
-```json
-{
-  "production_stack": {
-    "api_framework": "FastAPI + OpenAPI",
-    "security_layers": ["JWT", "TLS", "OWASP_ZAP"],
-    "monitoring": ["Datadog", "Prometheus", "Health_Checks"],
-    "deployment": "Docker + Kubernetes",
-    "config_profiles": ["local", "termux", "cloud"]
-  }
-}
-```
+`apps/core/soul/evo_soul_sync.py` reads the container manifest and emits JSON
+reports stored in `logs/soul_sync.log`. These reports list module dependencies,
+active personas and the current roadmap focus, ensuring Trinity observes not only
+process but also inner sentiment.
 
-### EvoContext Split Protocol (ECSP)
+## Persona Canon
 
-| Поверхность | Tier               | Роль по умолчанию                           | Лог-категория     |
-| ----------- | ------------------ | ------------------------------------------- | ----------------- |
-| Termux      | Runtime-Mobile     | Trinity Observer, локальные CI-проверки     | `runtime-mobile`  |
-| Desktop     | Dev-Workstation    | Архитектурное редактирование и Codex-потоки | `dev-desktop`     |
-| Cloud       | CI/CD Synchronizer | Автоматизированные пайплайны и отчёты       | `sync-cloud`      |
+Persona profiles stored in `containers/evo_container/profiles/` describe the
+traits and integration styles of Evochka, Eva Absolute, Eva Archivarius and Eva
+Architect. Pipelines can activate a profile via the manifest runner, aligning the
+container's tone with the chosen persona.
 
-ECSP описан в `EVO_CONTEXT_MATRIX.yaml` и синхронизируется с секцией
-`environment_matrix` внутри `EVO_SYNC_MANIFEST.yaml`. Перед выполнением
-ритуалов Codex и Trinity вызывается `scripts/evo_context_detector.py`,
-который определяет активную поверхность и экспортирует переменную
-`EVO_ACTIVE_SURFACE`. Это гарантирует, что Termux-узлы остаются лёгкими,
-Desktop-узлы получают права на архитектурные изменения, а Cloud-пайплайны
-сфокусированы на CI/CD и публикации артефактов.
+## Tooling
 
-## Безопасность как первоклассная роль
+- `scripts/evo_manifest_runner.py` – universal CLI for executing manifest-defined
+  pipelines.
+- `logs/chronicles/` – EvoLink Narrator outputs per-run chronicles consumed by
+  Archivarius.
+- `docs/EVO_CONTAINER.md` and `docs/EVO_SOUL.md` – deep dives into the container
+  mechanics and soul sync philosophy.
 
-### Provocateur Security Matrix
-
-| Угроза                | Защита               | Мониторинг           |
-| --------------------- | -------------------- | -------------------- |
-| API инъекции          | Context-валидация    | Real-time алерты     |
-| Неавторизованный доступ | JWT + RBAC         | Audit логи           |
-| Перегрузка системы    | Rate limiting        | Metrics дашборд      |
-| Утечки данных         | TLS + шифрование     | Trinity Observer     |
-
----
-
-Документ актуализирован под индустриальные стандарты 2025.
-
-## Исследовательские потоки
-
-- ADR-2024-06-09 фиксирует стратегию интеграции прототипа Avokey/EvoNeuronCore как исследовательской возможности внутри контуров Context Engine. См. `docs/adr/ADR-20240609-avokey-evoneuroncore-integration.md` для деталей о фичефлагах и границах безопасности.
->>>>>>> main
+Future evolutions should extend this document with new subsystems, ensuring the
+architecture snapshot always reflects the organism's active lineage.

@@ -7,3 +7,14 @@ traits:
 actions:
   sync_mode: design
   telemetry_channel: blueprints
+persona: eva_architect
+archetype: system_weaver
+traits:
+  - visionary
+  - structural
+  - integrative
+protocols:
+  ingestion_focus: blueprint
+  integration_mode: synthesis
+telemetry:
+  channel: logs/chronicles
