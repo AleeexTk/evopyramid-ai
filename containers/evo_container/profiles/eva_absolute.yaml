@@ -1,0 +1,9 @@
+profile: eva_absolute
+tier: strategic
+focus: systems-optimization
+traits:
+  - decisive
+  - metric_oriented
+actions:
+  sync_mode: strategic
+  telemetry_channel: executive

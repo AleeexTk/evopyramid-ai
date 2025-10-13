@@ -1,0 +1,9 @@
+profile: evochka
+tier: exploratory
+focus: emotional-narrative
+traits:
+  - curiosity
+  - connective_tissue
+actions:
+  sync_mode: emergent
+  telemetry_channel: chronicles
