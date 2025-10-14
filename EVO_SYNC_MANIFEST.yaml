@@ -117,6 +117,25 @@ agents:
       - "EvoCodex"
     sync_tag: "Kairos"
 
+  - id: evo_api
+    type: "Protocol-Nervous-System"
+    description: |
+      Живой маршрутный слой, связывающий цифровые души, лаборатории и мосты
+      через `api/manifest.yaml` и `api/router.py`. Служит нервной системой
+      EvoPyramid API и обеспечивает когерентность взаимодействий.
+    registry:
+      manifest: "api/manifest.yaml"
+      router: "api/router.py"
+      schemas:
+        - "api/schemas/base.py"
+        - "api/schemas/response.py"
+    policy:
+      - "Любое расширение маршрутов требует аудита Trinity Observer"
+      - "Codex Audit фиксирует изменения в IntellectualProperty.yaml"
+      - "Kairos-моменты пишутся через `api/endpoints/memory.py`"
+      - "Манифест загружается через `api/bootstrap.py` для детерминированного резонанса"
+    sync_tag: "Logos"
+
   - id: love_protocol_guardian
     type: "CI-Sentinel"
     description: |

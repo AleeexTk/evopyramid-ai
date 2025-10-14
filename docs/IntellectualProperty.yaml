@@ -1,0 +1,81 @@
+# ========================================
+# EvoPyramid API Intellectual Property Map
+# ========================================
+
+authority:
+  custodian: "AlexCreator"
+  steward: "EvoCodex"
+  version: "1.0.Ω"
+  last_updated: "2025-10-14"
+
+artifacts:
+  - id: "api-router"
+    name: "EvoRouter Core"
+    type: "Structural"
+    path: "api/router.py"
+    authors:
+      - "EvoCodex"
+    dependencies:
+      - "api/manifest.yaml"
+    description: "Manifest-driven registry aligning internal labs with the collective protocol."
+
+  - id: "api-bootstrap"
+    name: "Evo API Bootstrap"
+    type: "Structural"
+    path: "api/bootstrap.py"
+    authors:
+      - "EvoCodex"
+    dependencies:
+      - "api/manifest.yaml"
+      - "api/router.py"
+    description: "Loader that resonates manifest declarations into EvoRouter registrations."
+
+  - id: "api-schemas"
+    name: "Evo API Schemas"
+    type: "Cognitive"
+    path: "api/schemas/"
+    authors:
+      - "EvoCodex"
+    dependencies: []
+    description: "Canonical dataclasses shaping Codex, FinArt, and Memory exchanges."
+
+  - id: "api-endpoints"
+    name: "Evo API Endpoints"
+    type: "Syntonic"
+    path: "api/endpoints/"
+    authors:
+      - "EvoCodex"
+    dependencies:
+      - "api/schemas/base.py"
+      - "api/schemas/response.py"
+    description: "Harmonic stubs connecting laboratories to the EvoRouter heartbeat."
+
+  - id: "api-manifest"
+    name: "Evo API Manifest"
+    type: "Structural"
+    path: "api/manifest.yaml"
+    authors:
+      - "EvoCodex"
+    dependencies: []
+    description: "Declarative registry used by Trinity Observer and Codex audits."
+
+  - id: "license-omega"
+    name: "EvoLicense.Ω"
+    type: "Legal"
+    path: "docs/EvoLicense.Ω.md"
+    authors:
+      - "AlexCreator"
+      - "EvoCodex"
+    dependencies:
+      - "docs/EvoPyramid_API_Whitepaper.md"
+    description: "Sovereign license capturing rights, obligations, and enforcement paths."
+
+  - id: "ethics-code"
+    name: "Ethics and Conduct"
+    type: "Cognitive"
+    path: "docs/EthicsAndConduct.md"
+    authors:
+      - "EvoCodex"
+    dependencies:
+      - "docs/EvoPyramid_Philosophy.md"
+    description: "Operational ethics for every API interaction."

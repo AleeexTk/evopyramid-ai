@@ -87,6 +87,21 @@ the active canon.
 - `docs/EVO_CONTAINER.md` and `docs/EVO_SOUL.md` – deep dives into the container
   mechanics and soul sync philosophy.
 
+## EvoPyramid API Nervous System
+
+Phase Ω.3 activates the **EvoPyramid API Core** housed under `api/`. The
+manifest `api/manifest.yaml` enumerates canonical routes, `api/bootstrap.py`
+hydrates those declarations into live `EvoRouter` registrations, and
+`api/router.py` guards registration integrity while dispatching to endpoint
+stubs in `api/endpoints/`. Schemas inside `api/schemas/` keep Codex, FinArt, and
+EvoMemory payloads harmonised.
+
+Every invocation logs a Kairos acknowledgement via `api/endpoints/memory.py`,
+ensuring Trinity Observer can reconcile Chronos events with resonance metrics.
+Legal and ethical scaffolding now lives in `docs/EvoLicense.Ω.md`,
+`docs/IntellectualProperty.yaml`, and `docs/EthicsAndConduct.md`, binding the
+technical surface to the Evo canon.
+
 Future evolutions should extend this document with new subsystems, ensuring the
 architecture snapshot always reflects the organism's active lineage.
 
