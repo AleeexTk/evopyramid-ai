@@ -557,8 +557,10 @@ def create_annotation(source: Path, destination: Path, relative_path: str) -> No
 
 
 def process_priority_txt(roots: List[Path]) -> List[Dict[str, object]]:
+    """Copy prioritized text files into the ingest staging area with annotations."""
+
     prepare_ingest_dirs()
-    annotated: List[Dict[str, object]] = []
+    prioritized: List[Dict[str, object]] = []
 
     for base in roots:
         for file_path in walk_files(base):
@@ -573,70 +575,42 @@ def process_priority_txt(roots: List[Path]) -> List[Dict[str, object]]:
             if size_kb < PRIORITY_THRESHOLD_KB:
                 continue
 
-            relative = rel_to(base, file_path)
-            relative_path = Path(relative)
-
-            raw_dest = ingest_dirs["pending_raw"] / relative_path
-            raw_dest.parent.mkdir(parents=True, exist_ok=True)
             try:
-                copy2(file_path, raw_dest)
+                relative_path = file_path.resolve().relative_to(base.resolve())
+            except ValueError:
+                relative_path = Path(file_path.name)
+
+            raw_destination = RAW_DIR / relative_path
+            raw_destination.parent.mkdir(parents=True, exist_ok=True)
+
+            annotated_relative = relative_path.with_name(
+                f"{relative_path.stem}_annotated{relative_path.suffix}"
+            )
+            annotated_destination = ANNOT_DIR / annotated_relative
+            annotated_destination.parent.mkdir(parents=True, exist_ok=True)
+
+            try:
+                copy2(file_path, raw_destination)
+                create_annotation(file_path, annotated_destination, str(relative_path))
             except Exception:
-                continue
-
-            annotated_name = relative_path.stem + "_annotated" + relative_path.suffix
-            annotated_path = relative_path.with_name(annotated_name)
-            annot_dest = ingest_dirs["pending_annot"] / annotated_path
-            annot_dest.parent.mkdir(parents=True, exist_ok=True)
-            try:
-                annotate_copy(file_path, annot_dest, source_label=relative)
-            except Exception:
-                continue
-
-            priority_docs.append(
-                {
-                    "original": str(file_path.resolve()),
-                    "relative_to_root": relative,
-                    "size_kb": round(size_kb, 2),
-                    "raw_copy": str(raw_dest.resolve()),
-                    "annotated_copy": str(annot_dest.resolve()),
-            raw_target = RAW_DIR / file_path.name
-
-            try:
-                copy2(file_path, raw_target)
-            except OSError:
-                # Skip files that cannot be copied.
-                continue
-
-            annotated_target = ANNOT_DIR / f"{file_path.stem}_annotated.txt"
-            try:
-                original_text = safe_read_text(file_path)
-                with annotated_target.open("w", encoding="utf-8") as annotated_file:
-                    annotated_file.write(
-                        "### [Evo Annotation] "
-                        f"{datetime.now().isoformat()}\n"
-                        f"# Source: {relative}\n"
-                        "# Architecture reflection: pending synthesis by EvoCodex\n\n"
-                    )
-                    annotated_file.write(original_text)
-            except OSError:
-                # If annotation fails remove the raw copy to avoid inconsistencies.
+                # Ensure partial copies do not linger when annotation fails.
                 try:
-                    raw_target.unlink(missing_ok=True)
+                    raw_destination.unlink(missing_ok=True)
                 except Exception:
                     pass
                 continue
 
-            catalog.append(
+            prioritized.append(
                 {
-                    "path": str(file_path.resolve()),
+                    "path": str(relative_path),
                     "size_kb": round(size_kb, 2),
-                    "raw_copy": str(raw_target.resolve()),
-                    "annotated_copy": str(annotated_target.resolve()),
+                    "raw_copy": str(raw_destination.resolve()),
+                    "annotated_copy": str(annotated_destination.resolve()),
                     "priority": 1.0,
                 }
             )
 
-    return priority_docs
+    return prioritized
 
 
 def write_outputs(out_dir: Path, payload: dict) -> None:
