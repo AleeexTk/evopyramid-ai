@@ -26,6 +26,12 @@ class GeminiConfig:
     output_mode: str = DEFAULT_OUTPUT_MODE
     api_key: Optional[str] = None
     lineage_signature: str = DEFAULT_LINEAGE_SIGNATURE
+    model: str = "gemini-1.5-pro"
+    api_key_env: str = "GEMINI_API_KEY"
+    enabled: bool = True
+    context_scope: Optional[str] = None
+    output_mode: str = "text"
+    api_key: Optional[str] = None
 
     @classmethod
     def from_mapping(cls, payload: Dict[str, Any]) -> "GeminiConfig":
@@ -40,6 +46,12 @@ class GeminiConfig:
             lineage_signature=gemini_payload.get(
                 "lineage_signature", DEFAULT_LINEAGE_SIGNATURE
             ),
+            model=gemini_payload.get("model", cls.model),
+            api_key_env=gemini_payload.get("api_key_env", cls.api_key_env),
+            enabled=bool(gemini_payload.get("enabled", cls.enabled)),
+            context_scope=gemini_payload.get("context_scope"),
+            output_mode=gemini_payload.get("output_mode", cls.output_mode),
+            api_key=gemini_payload.get("api_key"),
         )
 
 

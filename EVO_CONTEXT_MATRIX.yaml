@@ -1,0 +1,116 @@
+# ============================================
+# 🧭 EVO_CONTEXT_MATRIX.yaml
+# EvoContext Split Protocol (ECSP)
+# --------------------------------------------
+# Purpose:
+#   Provide a dedicated registry describing execution surfaces
+#   and their behaviors so EvoCodex and allied agents adapt to
+#   runtime, desktop, and cloud contexts seamlessly.
+# ============================================
+
+matrix:
+  version: "0.1.0"
+  maintainers:
+    - "AlexCreator"
+    - "EvoCodex"
+  canonical_manifest: "EVO_SYNC_MANIFEST.yaml#environment_matrix"
+
+surfaces:
+  termux:
+    tier: "runtime-mobile"
+    description: "Termux / Android node optimized for lightweight monitoring and rapid local checks."
+    detection:
+      path_contains:
+        - "com.termux"
+      env_flags: []
+      platform_any_of:
+        - "Linux"
+    capabilities:
+      runtime:
+        tasks:
+          - "Invoke scripts/evo_runner.sh for local CI sweeps."
+          - "Stream Trinity Observer metrics to logs/runtime-mobile."
+        limits:
+          - "Avoid large dependency installations without confirmation."
+      synchronization:
+        targets:
+          - "desktop"
+          - "cloud"
+        method: "rsync / git pull-push via local_sync_manager.py"
+    logging:
+      category: "runtime-mobile"
+      sink: "logs/runtime-mobile/context.log"
+
+  desktop:
+    tier: "dev-workstation"
+    description: "Primary architectural editing surface (VS Code, GitHub Desktop, JetBrains)."
+    detection:
+      platform_any_of:
+        - "Windows"
+        - "Darwin"
+        - "Linux"
+      env_flags:
+        - "VSCODE_GIT_IPC_HANDLE"
+      path_contains: []
+    capabilities:
+      development:
+        tasks:
+          - "Author and refactor modules."
+          - "Update manifests and documentation."
+          - "Manage Git branches and Pull Requests."
+        limits:
+          - "Do not run long-lived Trinity Observer sessions here."
+      synchronization:
+        targets:
+          - "mobile"
+          - "cloud"
+        method: "git + EvoSync"
+    logging:
+      category: "dev-desktop"
+      sink: "logs/dev-desktop/context.log"
+
+  cloud:
+    tier: "ci-cd"
+    description: "Automated pipelines (GitHub Actions, Render, Railway)."
+    detection:
+      env_flags:
+        - "GITHUB_ACTIONS"
+        - "CI"
+      platform_any_of:
+        - "Linux"
+      path_contains: []
+    capabilities:
+      automation:
+        tasks:
+          - "Execute CI/CD workflows and publish artifacts."
+          - "Run EvoDashboard analytics and Codex feedback sweeps."
+        limits:
+          - "Avoid direct manual editing of repository files."
+      synchronization:
+        targets:
+          - "desktop"
+          - "mobile"
+        method: "artifact uploads + git fetch"
+    logging:
+      category: "sync-cloud"
+      sink: "logs/sync-cloud/context.log"
+
+protocol:
+  default_behavior:
+    - "Detect surface on bootstrap using scripts/evo_context_detector.py."
+    - "Export detected surface as EVO_ACTIVE_SURFACE env var."
+    - "Append detection result to EvoMemory context logs."
+  fallback:
+    environment: "desktop"
+    reason: "Desktop mode is safest for manual intervention."
+  escalation:
+    - condition: "surface == unknown"
+      action: "Trigger Observer alert and request human confirmation."
+
+charter_integration:
+  reference: "docs/EVO_CODEX_USER_CHARTER.md"
+  directive: |
+    EvoCodex shall respect ECSP states when executing Trinity-4 loops.
+    Runtime nodes focus on observation and reporting, while desktop nodes
+    shape the architecture and cloud nodes enforce automated fidelity.
+

@@ -1,0 +1,95 @@
+name: EvoPyramid Continuous Integrity
+
+on:
+  push:
+    branches: [ main, codex-review ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  evo_ci:
+    name: 🧠 Evo Core Integrity Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      EVODIR: ./local_EVO
+      PYTHONUNBUFFERED: 1
+      TERM: xterm-256color
+
+    steps:
+      # 🌀 1. Подготовка окружения
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          echo "[Evo] Installing dependencies..."
+          python -m pip install --upgrade pip wheel
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements_context.txt ]; then pip install -r requirements_context.txt; fi
+          echo "[Evo] Dependencies installed successfully."
+
+      # ⚙️ 2. Проверка структуры и инициализация контекста
+      - name: Initialize Core Context
+        run: |
+          echo "[Evo] Checking environment structure..."
+          mkdir -p logs apps/core/context/reports
+          python - <<'EOF'
+          from apps.core.context.environment_detector import detect_environment
+          env = detect_environment()
+          print(f"[Evo] Environment detected → {env.get('env_type')}")
+          EOF
+
+      # 🧩 3. Диагностика Codex Shell
+      - name: Run Codex diagnostic
+        id: codex_diag
+        continue-on-error: true
+        run: |
+          echo "[Evo] Running Codex diagnostic..."
+          python - <<'EOF'
+          from apps.cli import evocodex_shell
+          try:
+              evocodex_shell.main(["diagnose"])
+          except Exception as e:
+              print("[Evo] Diagnostic failed:", e)
+              exit(1)
+          EOF
+
+      # 🔍 4. Проверка Trinity Observer (эмуляция запуска)
+      - name: Simulate Trinity Observer
+        id: trinity_sim
+        continue-on-error: true
+        run: |
+          echo "[Evo] Launching Trinity Observer simulation..."
+          nohup python -m apps.core.observers.trinity_observer > logs/trinity_ci.log 2>&1 &
+          sleep 4
+          echo "[Evo] Checking Trinity status..."
+          ps aux | grep trinity_observer | grep -v grep || echo "[!] Trinity not detected."
+
+      # 📜 5. Сбор логов
+      - name: Upload Evo logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evo-ci-logs
+          path: |
+            logs/
+            apps/core/context/reports/
+            **/*.log
+
+      # 🧾 6. Итоговый отчёт
+      - name: Summary
+        if: always()
+        run: |
+          echo "===================================="
+          echo "✅ Evo CI pipeline finished."
+          echo "📁 Logs and reports uploaded as artifacts."
+          echo "===================================="
+

@@ -1,0 +1,20 @@
+profile: eva_archivarius
+tier: archival
+focus: memory-preservation
+traits:
+  - meticulous
+  - temporal_sense
+actions:
+  sync_mode: archival
+  telemetry_channel: records
+persona: eva_archivarius
+archetype: living_archive
+traits:
+  - meticulous
+  - storykeeper
+  - historian
+protocols:
+  ingestion_focus: lineage
+  integration_mode: preservation
+telemetry:
+  channel: logs/chronicles

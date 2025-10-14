@@ -1,0 +1,16 @@
+manifest:
+  id: "EVO.LOCAL.CONTEXT"
+  version: "0.2"
+  purpose: "Автоматическое определение, анализ и маркировка среды исполнения"
+modules:
+  - environment_detector
+  - device_analyzer
+  - local_sync_manager
+actions:
+  - detect_environment
+  - analyze_device
+  - mark_local_request
+sync_rules:
+  termux: ["context", "logs"]
+  desktop: ["projects", "memory"]
+  cloud: ["metrics"]

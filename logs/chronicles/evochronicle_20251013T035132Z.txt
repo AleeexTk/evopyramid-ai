@@ -1,0 +1,15 @@
+EvoLink Narrator Summary
+------------------------
+[2025-10-13T03:51:32.933942Z] (pipeline) running step 1: evo_intake :: {'entrypoint': 'run', 'config': {'source': 'evo_link_bridge'}}
+[2025-10-13T03:51:32.933966Z] (intake) captured external payload :: {'link': 'https://chat.openai.com/share/example', 'profile': 'evochka', 'source': 'evo_link_bridge'}
+[2025-10-13T03:51:32.934164Z] (pipeline) running step 2: evo_analysis :: {'entrypoint': 'run', 'config': {}}
+[2025-10-13T03:51:32.934174Z] (analysis) derived intake insights :: {'link_present': True, 'profile': 'evochka', 'hypothesis': 'Imported narrative fragment will reinforce collective memory.'}
+[2025-10-13T03:51:32.934329Z] (pipeline) running step 3: evo_adapt :: {'entrypoint': 'run', 'config': {}}
+[2025-10-13T03:51:32.934338Z] (adapt) generated adaptation directives :: {'alignment_score': 1.0, 'mode': 'convergence'}
+[2025-10-13T03:51:32.934472Z] (pipeline) running step 4: evo_integrate :: {'entrypoint': 'run', 'config': {'memory_channel': 'core.memory', 'gain': 1.25}}
+[2025-10-13T03:51:32.934480Z] (integrate) integrated directives :: {'memory_channel': 'core.memory', 'intensity': 1.25}
+[2025-10-13T03:51:32.934608Z] (pipeline) running step 5: evo_sync :: {'entrypoint': 'run', 'config': {'observer': 'trinity'}}
+[2025-10-13T03:51:32.934616Z] (sync) synchronized with observers :: {'observer': 'trinity', 'memory_channel': 'core.memory', 'intensity': 1.25}
+[2025-10-13T03:51:32.934776Z] (pipeline) running step 6: evo_harmonize :: {'entrypoint': 'run', 'config': {'tone': 'reflective'}}
+[2025-10-13T03:51:32.934787Z] (harmonize) harmonized container output :: {'profile': 'evochka', 'intensity': 1.25, 'observer': 'trinity', 'tone': 'reflective'}
+[2025-10-13T03:51:32.936651Z] (pipeline) running step 7: evo_narrator :: {'entrypoint': 'run', 'config': {'attach_to_metadata': True}}
