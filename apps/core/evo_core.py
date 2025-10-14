@@ -23,7 +23,7 @@ from uuid import uuid4
 
 try:  # pragma: no cover - optional dependency
     import requests
-    RequestException = requests.RequestException
+    RequestException = getattr(requests, "RequestException", Exception)
 except ImportError:  # pragma: no cover - optional dependency fallback
     requests = None  # type: ignore[assignment]
 
