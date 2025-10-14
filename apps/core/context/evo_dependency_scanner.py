@@ -280,6 +280,111 @@ def collect_priority_texts(
                 "modified_at": timestamp,
             }
         )
+    return summary
+
+
+def prepare_ingest_dirs() -> None:
+    for directory in (RAW_DIR, ANNOT_DIR, PROC_DIR):
+        directory.mkdir(parents=True, exist_ok=True)
+
+
+def copy_priority_texts(roots: Iterable[Path]) -> List[Dict[str, object]]:
+    """Extract high-priority text documents into the evo_ingest pipeline."""
+
+    ensure_ingest_dirs()
+    catalog: List[Dict[str, object]] = []
+def create_annotation(source: Path, destination: Path, relative_path: str) -> None:
+    with destination.open("w", encoding="utf-8") as target, source.open(
+        "r", encoding="utf-8", errors="ignore"
+    ) as origin:
+        target.write(f"{ANNOTATION_HEADER} {datetime.now().isoformat()}\n")
+        target.write(f"# Source: {relative_path}\n")
+        target.write("# Architecture reflection: awaiting analysis...\n\n")
+        target.write(origin.read())
+
+
+def process_priority_txt(roots: List[Path]) -> List[Dict[str, object]]:
+    """Copy prioritized text files into the ingest staging area with annotations."""
+
+    prepare_ingest_dirs()
+    prioritized: List[Dict[str, object]] = []
+
+    for base in roots:
+        for file_path in walk_files(base):
+            if file_path.suffix.lower() not in PRIORITY_TXT_EXT:
+                continue
+
+            try:
+                size_kb = os.path.getsize(file_path) / 1024
+            except OSError:
+                continue
+
+            if size_kb < PRIORITY_THRESHOLD_KB:
+                continue
+
+            try:
+                relative_path = file_path.resolve().relative_to(base.resolve())
+            except ValueError:
+                relative_path = Path(file_path.name)
+
+            raw_destination = RAW_DIR / relative_path
+            raw_destination.parent.mkdir(parents=True, exist_ok=True)
+
+            annotated_relative = relative_path.with_name(
+                f"{relative_path.stem}_annotated{relative_path.suffix}"
+            )
+            annotated_destination = ANNOT_DIR / annotated_relative
+            annotated_destination.parent.mkdir(parents=True, exist_ok=True)
+
+            try:
+                copy2(file_path, raw_destination)
+                create_annotation(file_path, annotated_destination, str(relative_path))
+            except Exception:
+                # Ensure partial copies do not linger when annotation fails.
+                try:
+                    raw_destination.unlink(missing_ok=True)
+                except Exception:
+                    pass
+                continue
+
+            prioritized.append(
+                {
+                    "path": str(relative_path),
+                    "size_kb": round(size_kb, 2),
+                    "raw_copy": str(raw_destination.resolve()),
+                    "annotated_copy": str(annotated_destination.resolve()),
+                    "priority": 1.0,
+                }
+            )
+
+    return prioritized
+
+
+def write_outputs(out_dir: Path, payload: dict) -> None:
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    with (out_dir / "evo_dependency_map.json").open("w", encoding="utf-8") as fp:
+        json.dump(payload, fp, ensure_ascii=False, indent=2)
+
+    report_lines: list[str] = []
+    report_lines.append(f"[EvoDependencyScanner] {payload['timestamp']}")
+    report_lines.append(f"Roots: {', '.join(payload['roots'])}")
+    report_lines.append(f"Files with imports: {payload['stats']['files_with_imports']}")
+    report_lines.append(f"Unique imports observed: {payload['stats']['unique_imports']}")
+    report_lines.append("")
+
+    report_lines.append("Top files by outgoing imports:")
+    for name, count in payload["magnets"]["top_outgoing"]:
+        report_lines.append(f"  - {name}  → {count}")
+    report_lines.append("")
+
+    report_lines.append("Top import targets by incoming refs:")
+    for name, count in payload["magnets"]["top_incoming"]:
+        report_lines.append(f"  - {name}  ← {count}")
+    report_lines.append("")
+
+    report_lines.append("Artifact waves (logs/cache/tmp):")
+    return catalog
 
     return results
 
