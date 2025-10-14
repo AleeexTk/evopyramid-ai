@@ -7,6 +7,64 @@
 #   Codex Review Agent, Trinity Observer, and EvoMemory subsystems.
 # ============================================
 
+sync_policy:
+  authority: "GitHub"
+  direction: "one-way"
+  mode: "monument->echo"
+  local_push: false
+  codex_guard: true
+  auto_repair: true
+
+directives:
+  - id: evo_sync_notion
+    name: "EvoSync Notion Directive"
+    description: |
+      Автоматизирует зеркалирование событий EvoPyramid (коммиты, релизы,
+      ритуалы) в Notion 3.0, чтобы архитектура фиксировала свою эволюцию в
+      реальном времени. Использует EvoRouter как нервный мост и Trinity
+      Observer как аудитора когерентности Kairos ↔ Chronos.
+    pipeline:
+      - "GitHub webhook → EvoRouter (api/router.py)"
+      - "EvoRouter формирует KairosEvent и пишет в EvoMemory/KairosLog"
+      - "EvoRouter подписывает событие EvoSeal AES256"
+      - "Notion API (EvoRepository Tracking DB) принимает запись"
+      - "Notion агенты (EvoSoul, Codex, Observer, FinArt) выполняют ответные действия"
+      - "Notion агенты отправляют ответные вебхуки в /api/router.py#/notion_feedback"
+    tracking_fields:
+      - repo
+      - module
+      - commit
+      - timestamp
+      - author
+      - impact
+      - kairos_level
+      - synced
+      - agent_tags
+      - lineage
+    buffers:
+      evo_memory:
+        - "EvoMemory/KairosLog/"
+        - "logs/trinity_metrics.log"
+      feedback:
+        - "EvoMemory/Feedback/Notion/"
+        - "logs/notion_feedback.log"
+    observers:
+      - "Trinity Observer сверяет GitHub → Notion лаг"
+      - "Codex Review создаёт задачу, если событие не отражено"
+      - "Observer регистрирует статистику latency_ms и retries"
+    visualization:
+      - "Notion Timeline View"
+      - "Notion Map View"
+      - "Kairos Cohesion Dashboard"
+      - "Kairos Compass Board"
+    security:
+      signing: "EvoSeal AES256"
+      notion_permissions: "Row-level access with EvoAuth v3 scope"
+      replay_policy: "EvoRouter replays failed deliveries until acknowledged"
+      provenance: "Каждая запись хранит evo_hash для аудита Trinity"
+    status: "pilot"
+
+
 manifest:
   version: "1.2.Ω"
   architecture: "EvoPyramid-AI"

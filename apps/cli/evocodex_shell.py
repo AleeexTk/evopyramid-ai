@@ -1,9 +1,11 @@
-import os
-import sys
-import yaml
-import subprocess
+import json
 import logging
+import os
+import subprocess
+import sys
 from typing import Any, Dict, Optional
+
+import yaml
 
 
 class EvoCodexShell:
@@ -15,28 +17,63 @@ class EvoCodexShell:
     def __init__(self, config_path: str = None):
         self.base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         self.config_path = config_path or os.path.join(self.base_dir, "EvoMETA", "evo_config.yaml")
-        self.config = self._load_config()
         self._setup_logging()
+        self.config = self._load_config()
         self._init_paths()
 
         logging.info("EvoCodexShell инициализирован")
         self._warm_up_pear_processor()
 
+    def _default_config(self) -> Dict[str, Any]:
+        return {"ritual_commands": {}, "integration_modules": []}
+
     def _load_config(self) -> Dict[str, Any]:
         """Загрузка конфигурации с обработкой ошибок"""
+
+        if not os.path.exists(self.config_path):
+            logging.warning(
+                "Конфигурация не найдена по пути %s. Использую значения по умолчанию.",
+                self.config_path,
+            )
+            return self._default_config()
+
         try:
             with open(self.config_path, "r", encoding="utf-8") as f:
-                config = yaml.safe_load(f)
+                raw = f.read()
+                config = yaml.safe_load(raw) if yaml else json.loads(raw)
+                if config is None:
+                    config = {}
+        except json.JSONDecodeError as exc:
+            logging.critical("Ошибка разбора JSON-конфига: %s", exc)
+            return self._default_config()
+        except Exception as exc:  # pragma: no cover - defensive
+            logging.critical("Ошибка загрузки конфига: %s", exc)
+            return self._default_config()
 
-            required_sections = ["ritual_commands", "integration_modules"]
-            for section in required_sections:
-                if section not in config:
-                    raise ValueError(f"Отсутствует обязательная секция конфига: {section}")
+        if not isinstance(config, dict):
+            logging.error(
+                "Некорректный формат конфига (%s). Ожидался словарь верхнего уровня.",
+                type(config).__name__,
+            )
+            return self._default_config()
 
-            return config
-        except Exception as e:  # pragma: no cover - defensive
-            logging.critical(f"Ошибка загрузки конфига: {e}")
-            sys.exit(1)
+        for section in ("ritual_commands", "integration_modules"):
+            if section not in config:
+                logging.error("Отсутствует обязательная секция конфига: %s", section)
+                config[section] = [] if section == "integration_modules" else {}
+                continue
+
+            value = config[section]
+            expected_type = list if section == "integration_modules" else dict
+            if not isinstance(value, expected_type):
+                logging.error(
+                    "Секция %s имеет некорректный тип (%s). Сбрасываю к значению по умолчанию.",
+                    section,
+                    type(value).__name__,
+                )
+                config[section] = [] if section == "integration_modules" else {}
+
+        return config
 
     def _setup_logging(self):
         """Настройка системы логирования с ротацией"""
