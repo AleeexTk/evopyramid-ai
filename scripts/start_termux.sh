@@ -1,22 +1,29 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CONFIG_FILE="$REPO_ROOT/EvoMETA/evo_config.yaml"
-VENV_PATH="$REPO_ROOT/.venv"
+termux-setup-storage || true
 
-if [ ! -d "$VENV_PATH" ]; then
-  python3 -m venv "$VENV_PATH"
+echo "[Evo] Bootstrapping Termux node…"
+pkg update -y
+pkg install -y python git openssh
+
+cd "$HOME"
+if [ ! -d evopyramid-ai ]; then
+  git clone https://github.com/AleeexTk/evopyramid-ai.git
+fi
+cd evopyramid-ai
+
+pip install -U pip
+if [ -f requirements.txt ]; then
+  pip install -r requirements.txt || true
+fi
+if [ -f requirements_context.txt ]; then
+  pip install -r requirements_context.txt || true
 fi
 
-# shellcheck source=/dev/null
-source "$VENV_PATH/bin/activate"
-
-pip install --upgrade pip >/dev/null
-pip install -r "$REPO_ROOT/requirements.txt" 2>/dev/null || true
-
-export EVO_CONFIG="$CONFIG_FILE"
-export PYTHONPATH="$REPO_ROOT/apps:$PYTHONPATH"
-
-cd "$REPO_ROOT"
-python -m core.evo_core
+python -m apps.core.keys.key_loader >/dev/null 2>&1 || true
+mkdir -p logs
+nohup python -m apps.core.observers.trinity_observer > "logs/trinity_run.log" 2>&1 &
+echo "[Evo] Trinity Observer started. Logs → $PWD/logs/trinity_run.log"
+nohup python -m apps.core.trinity_observer > "$HOME/trinity.log" 2>&1 &
+echo "[Evo] Legacy Trinity Observer started. Logs → $HOME/trinity.log"

@@ -1,0 +1,54 @@
+# ============================================
+# EvoAbsolute Ω Role Manifest
+# --------------------------------------------
+# Declares the responsibilities and integration
+# hooks for the EvoAbsolute canonical role.
+# ============================================
+
+role:
+  id: evo_absolute
+  codename: "EvoAbsolute Ω"
+  lineage: "Trinity::Codex::Integrator"
+  tier: "Cognitive-Integrator"
+  status: "active"
+
+mission:
+  description: >-
+    EvoAbsolute acts as the autonomous bridge between the EvoPyramid
+    architecture and satellite laboratories. The inaugural deployment connects
+    to EvoFinArt, a Visual Studio driven lab focused on financial artifical
+    intelligence research and MT5 signal experimentation.
+  objectives:
+    - "Synchronise EvoPyramid manifests with EvoFinArt lab states"
+    - "Provide a programmable bridge for Visual Studio / MT5 workflows"
+    - "Report reflective telemetry back to Trinity and Codex"
+    - "Maintain FinArt-specific knowledge base assets"
+
+interfaces:
+  lab_adapter: "roles.evo_absolute.lab.visual_env_adapter:main"
+  manifests:
+    - "roles/evo_absolute/role_manifest.yaml"
+    - "roles/evo_absolute/lab/EvoFinArt/finart_manifest.yaml"
+  documentation:
+    - "roles/evo_absolute/docs/EVO_ABSOLUTE_ROLE.md"
+    - "roles/evo_absolute/docs/EVO_FINART_LAB.md"
+
+synchronisation:
+  bridge:
+    name: "EvoLinkBridge"
+    repo: "https://github.com/AleeexTk/EvoFinArt"
+    cadence: "manual + scheduled"
+    logging:
+      root: "logs/evo_absolute"
+      files:
+        - "sync.log"
+        - "finart_bridge.log"
+        - "reflection.json"
+
+telemetry:
+  observer_channel: "EvoAbsolute.link_event"
+  feedback_targets:
+    - "TrinityObserver"
+    - "Codex Sync CI"
+  reflection_stream: "logs/evo_absolute/reflection.json"
+

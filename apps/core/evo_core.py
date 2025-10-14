@@ -7,6 +7,7 @@ operating as part of a cohesive organism.
 """
 from __future__ import annotations
 
+import asyncio
 import base64
 import copy
 import hashlib
@@ -17,13 +18,30 @@ import os
 import random
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING, Coroutine
 from uuid import uuid4
 
-import requests
+try:  # pragma: no cover - optional dependency
+    import requests
+    RequestException = getattr(requests, "RequestException", Exception)
+except ImportError:  # pragma: no cover - optional dependency fallback
+    requests = None  # type: ignore[assignment]
+
+    class RequestException(Exception):
+        """Fallback exception used when ``requests`` is unavailable."""
+
+        pass
 import yaml
 from flask import Flask, jsonify, request
 from PIL import Image
+
+try:  # pragma: no cover - fallback path is covered by unit tests
+    from apps.core.integration.context_engine import get_context_engine
+except ImportError:  # pragma: no cover - allows running without optional deps
+    get_context_engine = None  # type: ignore[assignment]
+
+if TYPE_CHECKING:  # pragma: no cover - typing helpers only
+    from apps.core.integration.context_engine import EvoCodexContextEngine
 
 
 # ---------------------------------------------------------------------------
@@ -159,7 +177,7 @@ class HierarchicalPyramidMemory:
         )
         self.archive_dir = os.path.join(log_dir, "archive")
         os.makedirs(self.archive_dir, exist_ok=True)
-        self.cache: Dict[str, Dict[str, Any]] = {}
+        self.cache: Dict[tuple, List[Dict[str, Any]]] = {}
         self.patterns: Dict[tuple, int] = {}
         logger.info("HierarchicalPyramidMemory: инициализирована.")
 
@@ -174,9 +192,10 @@ class HierarchicalPyramidMemory:
         affective_score: float = 0.5,
     ) -> Optional[str]:
         node_id = f"memory_{uuid4().hex[:8]}"
+        relevance_score = self._calculate_relevance(tags, affective_score, content)
         metadata = {
             "tags": tags,
-            "relevance": 0.7,
+            "relevance": relevance_score,
             "source": memory_type,
             "parent_ids": [parent_id] if parent_id else [],
             "child_ids": [],
@@ -190,8 +209,11 @@ class HierarchicalPyramidMemory:
         self.nodes[node_id] = node
         if parent_id and parent_id in self.nodes:
             self.nodes[parent_id].metadata.setdefault("child_ids", []).append(node_id)
-        if metadata["relevance"] > 0.8:
-            self.cache[node_id] = node.to_dict()
+        if relevance_score >= 0.8:
+            cache_key = self._build_cache_key_from_tags(tags)
+            if cache_key:
+                self.cache.setdefault(cache_key, [])
+                self.cache[cache_key].append(node.to_dict())
         self._update_patterns(tags)
         logger.info(
             "Сохранён узел памяти %s (уровень %s, тип %s)", node_id, level, memory_type
@@ -221,19 +243,50 @@ class HierarchicalPyramidMemory:
         level: Optional[int] = None,
         use_cache: bool = True,
     ) -> List[Dict[str, Any]]:
-        if use_cache and query in self.cache:
-            return [self.cache[query]]
+        cache_key = self._build_cache_key_from_query(query)
+        if use_cache and cache_key in self.cache:
+            return [copy.deepcopy(item) for item in self.cache[cache_key]]
         results: List[Dict[str, Any]] = []
+        high_relevance_results: List[Dict[str, Any]] = []
+        query_tokens = self._tokenise_query(query)
         for node in self.nodes.values():
             if level is not None and node.level != level:
                 continue
             tags = node.metadata.get("tags", [])
-            if any(tag in query for tag in tags) and node.verify_signature():
-                results.append(node.to_dict())
+            tag_tokens = [tag.lower() for tag in tags]
+            if (query_tokens & set(tag_tokens) or any(tag in query.lower() for tag in tag_tokens)) and node.verify_signature():
+                node_dict = node.to_dict()
+                results.append(node_dict)
                 node.metadata["last_access"] = int(time.time())
-                if node.metadata.get("relevance", 0.0) > 0.8:
-                    self.cache[node.id] = node.to_dict()
+                if node.metadata.get("relevance", 0.0) >= 0.8:
+                    high_relevance_results.append(node_dict)
+        if high_relevance_results and cache_key:
+            self.cache[cache_key] = [copy.deepcopy(item) for item in high_relevance_results]
         return results
+
+    def _calculate_relevance(
+        self,
+        tags: List[str],
+        affective_score: float,
+        content: Optional[Dict[str, Any]] = None,
+    ) -> float:
+        tag_boost = min(0.4, 0.05 * len({tag.lower() for tag in tags if tag}))
+        affective_adjustment = (max(0.0, min(1.0, affective_score)) - 0.5) * 0.6
+        urgency_hint = 0.0
+        if content:
+            urgency_hint = 0.1 if content.get("priority") == "high" else 0.0
+        relevance = 0.5 + tag_boost + affective_adjustment + urgency_hint
+        return max(0.0, min(1.0, relevance))
+
+    def _build_cache_key_from_tags(self, tags: List[str]) -> tuple:
+        normalised_tags = tuple(sorted({tag.lower() for tag in tags if tag}))
+        return normalised_tags
+
+    def _build_cache_key_from_query(self, query: str) -> tuple:
+        return tuple(sorted(self._tokenise_query(query)))
+
+    def _tokenise_query(self, query: str) -> set:
+        return {token for token in query.lower().split() if token}
 
     def quantum_leap(self, node_id1: str, node_id2: str) -> Optional[Dict[str, Any]]:
         if node_id1 not in self.nodes or node_id2 not in self.nodes:
@@ -345,12 +398,18 @@ class ContainerOrchestrator:
         logger.info("Добавлена новая реплика ядра.")
 
     def connect_remote_pyramid(self, address: str, pyramid_id: str) -> None:
+        if requests is None:
+            logger.warning(
+                "Requests недоступен: пропускаем подключение пирамиды %s", pyramid_id
+            )
+            return
+
         try:
             response = requests.get(f"{address}/api/get_pyramid", timeout=5)
             response.raise_for_status()
             self.remote_pyramids[pyramid_id] = response.text
             logger.info("Подключена внешняя пирамида %s", pyramid_id)
-        except requests.RequestException as exc:
+        except RequestException as exc:
             logger.error("Ошибка подключения пирамиды %s: %s", pyramid_id, exc)
 
 
@@ -667,11 +726,17 @@ class ActionEngine:
 
         try:
             if action_type == "api_call" and isinstance(action_details, dict):
-                url = action_details.get("value", {}).get("url", "http://example.com")
-                payload = action_details.get("value", {}).get("payload", {})
-                response = requests.post(url, json=payload, timeout=5)
-                response.raise_for_status()
-                result = {"status": "success", "response": response.json()}
+                if requests is None:
+                    result = {
+                        "status": "failed",
+                        "reason": "requests_dependency_unavailable",
+                    }
+                else:
+                    url = action_details.get("value", {}).get("url", "http://example.com")
+                    payload = action_details.get("value", {}).get("payload", {})
+                    response = requests.post(url, json=payload, timeout=5)
+                    response.raise_for_status()
+                    result = {"status": "success", "response": response.json()}
             elif action_type == "file_write":
                 content = action_details.get("value", str(action_details)) if isinstance(action_details, dict) else str(action_details)
                 file_path = os.path.join(self.core.log_dir, f"action_{uuid4().hex[:8]}.txt")
@@ -683,7 +748,7 @@ class ActionEngine:
             else:
                 result = {"status": "success", "message": f"Имитация действия: {action_details}"}
             logger.info("Выполнено действие %s: %s", action_type, result)
-        except requests.RequestException as exc:
+        except RequestException as exc:
             logger.error("Ошибка при выполнении HTTP-запроса: %s", exc)
             result = {"status": "failed", "reason": str(exc)}
         return result
@@ -710,10 +775,92 @@ class EvoMetaCore:
         self.interface_adapter = InterfaceAdapter(self)
         self.ethics_core = EthicsCore(self)
         self.action_engine = ActionEngine(self)
+        self.context_engine: Optional["EvoCodexContextEngine"] = self._init_context_engine()
         self.is_running = True
         logger.info("EvoMetaCore: инициализация завершена.")
 
+    def _init_context_engine(self) -> Optional["EvoCodexContextEngine"]:
+        """Attempt to initialise the optional Quantum Context Engine."""
+
+        if get_context_engine is None:
+            logger.warning("Quantum Context Engine недоступен: модуль не найден.")
+            return None
+
+        try:
+            engine = get_context_engine()
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Ошибка инициализации Quantum Context Engine: %s", exc)
+            return None
+
+        logger.info("Quantum Context Engine: инициализация успешна.")
+        return engine
+
+    @staticmethod
+    def _run_async(coroutine: Coroutine[Any, Any, Any]) -> Any:
+        """Run an async coroutine in a dedicated event loop."""
+
+        loop = asyncio.new_event_loop()
+        try:
+            asyncio.set_event_loop(loop)
+            return loop.run_until_complete(coroutine)
+        finally:
+            asyncio.set_event_loop(None)
+            loop.close()
+
+    def process_context_query(
+        self, query: str, existing_context: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """Process a natural-language query through the context engine."""
+
+        if not self.context_engine:
+            logger.warning(
+                "Quantum Context Engine отключён, используется резервный ответ.")
+            return {
+                "success": False,
+                "response": f"Context engine unavailable for query: {query}",
+                "error": "context_engine_unavailable",
+            }
+
+        async def _execute() -> Dict[str, Any]:
+            return await self.context_engine.process_query(query, existing_context)
+
+        try:
+            result = self._run_async(_execute())
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Context engine error: %s", exc)
+            return {
+                "success": False,
+                "response": f"Context engine error: {exc}",
+                "error": str(exc),
+            }
+
+        affect = (result.get("context") or {}).get("affect") or {}
+        affect_intensity = float(affect.get("intensity", 0.5))
+        tags = ["context_engine", result.get("priority_path", "unknown_path")]
+
+        self.memory_manager.save_memory(
+            {
+                "query": query,
+                "response": result.get("response"),
+                "priority_path": result.get("priority_path"),
+                "context": result.get("context"),
+            },
+            tags,
+            "context_response",
+            level=1,
+            affective_score=affect_intensity,
+        )
+
+        return result
+
     def process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
+        if task.get("use_context_engine") or task.get("type") == "context_query":
+            query = str(task.get("data") or task.get("query") or "")
+            existing_context = task.get("context") if isinstance(task.get("context"), dict) else None
+            context_result = self.process_context_query(query, existing_context)
+            status = "success" if context_result.get("success", False) else "failed"
+            return {"status": status, "context_engine": context_result}
+
         if not self.ethics_core.check_action_ethics(task.get("type", "task"), task.get("data", "")):
             return {"status": "failed", "reason": "Этический конфликт"}
 
@@ -772,6 +919,16 @@ def create_app(config_path: Optional[str] = None) -> Flask:
 
         task = request.json or {}
         result = core.container_orchestrator.distribute_task(task)
+        return jsonify(result)
+
+    @app.route("/api/context_query", methods=["POST"])
+    def context_query() -> Any:  # noqa: D401
+        """Run a raw query through the Quantum Context Engine."""
+
+        payload = request.json or {}
+        query = str(payload.get("query", ""))
+        existing_context = payload.get("context") if isinstance(payload.get("context"), dict) else None
+        result = core.process_context_query(query, existing_context)
         return jsonify(result)
 
     @app.route("/api/get_pyramid", methods=["GET"])
