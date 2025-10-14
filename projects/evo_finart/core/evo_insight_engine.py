@@ -74,9 +74,17 @@ class EvoInsightEngine:
             "status": status,
             "config": {
                 "config_path": str(self._config_path),
-                "gemini": self.bridge.to_dict(),
+                "gemini": self._public_bridge_config(),
             },
         }
+
+    def _public_bridge_config(self) -> Dict[str, Any]:
+        """Return sanitized bridge configuration safe for public exposure."""
+
+        config = dict(self.bridge.to_dict())
+        # Redact secrets that may have been provided directly in the config file.
+        config.pop("api_key", None)
+        return config
 
     def _load_config(self, path: Path) -> Dict[str, Any]:
         if not path.exists():
