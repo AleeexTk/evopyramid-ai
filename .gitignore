@@ -43,8 +43,9 @@ coverage.xml
 *.tmp
 *.swp
 *.swo
-<<<<<<< HEAD
-=======
-evo_memory.xml
->>>>>>> main
 
+# Windows system files
+Desktop.ini
+Thumbs.db
+
+evo_memory.xml
