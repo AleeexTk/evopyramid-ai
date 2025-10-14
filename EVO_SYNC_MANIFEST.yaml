@@ -7,6 +7,15 @@
 #   Codex Review Agent, Trinity Observer, and EvoMemory subsystems.
 # ============================================
 
+sync_policy:
+  authority: "GitHub"
+  direction: "one-way"
+  mode: "monument->echo"
+  local_push: false
+  codex_guard: true
+  auto_repair: true
+
+
 manifest:
   version: "1.2.Ω"
   architecture: "EvoPyramid-AI"
