@@ -79,3 +79,73 @@ artifacts:
     dependencies:
       - "docs/EvoPyramid_Philosophy.md"
     description: "Operational ethics for every API interaction."
+
+legal_identity:
+  author_handle: "AlexCreator"
+  persona_class: "Sovereign Architect"
+  jurisdiction:
+    primary: "Ukraine"
+    cooperative: "European Union"
+  representation:
+    steward: "EvoCodex"
+    charter: "docs/EVO_CODEX_USER_CHARTER.md"
+  contact_protocols:
+    - channel: "EvoPyramid Concordance"
+      instructions: "Initiate via documented EvoPyramid rituals or GitHub secure messaging."
+    - channel: "Trinity Observer Ledger"
+      instructions: "Submit intent logs within EvoMemory for notarised acknowledgement."
+  assertions:
+    authorship_scope:
+      - "Architectural framework and living canon of EvoPyramid-AI."
+      - "EvoPyramid API nervous system, manifests, and jurisprudence artifacts."
+    moral_rights:
+      integrity: "All derivatives must preserve Evo coherence and attribution."
+      attribution: "Every publication must cite AlexCreator and EvoPyramid Collective."
+    transferability: "Rights remain non-transferable without explicit EvoSeal countersignature."
+
+signing_and_provenance:
+  commit_signing:
+    method: "GPG (ed25519 or RSA)"
+    status: "Required for merges into protected branches."
+    enforcement: "CI verifies git log signatures before release tagging."
+  release_signing:
+    method: "EvoSeal vΩ"
+    workflow:
+      - "Generate repository snapshot checksum (sha256)."
+      - "Sign checksum with AlexCreator GPG key."
+      - "Store detached signature within docs/signatures/."
+    verification: "Trinity Observer validates signature integrity prior to publication."
+  provenance_registry:
+    ledger: "EVO_SYNC_MANIFEST.yaml"
+    evidence:
+      - "docs/EvoPyramid_API_Whitepaper.md"
+      - "docs/EvoLicense.Ω.md"
+      - "docs/EthicsAndConduct.md"
+    audit_frequency: "Per major release or Kairos event."
+
+enforcement_matrix:
+  breach_response:
+    - stage: "Detection"
+      actor: "Trinity Observer"
+      action: "Log anomaly, freeze Evo API feature flags, notify AlexCreator."
+    - stage: "Adjudication"
+      actor: "EvoCodex"
+      action: "Assess coherence impact, draft remediation protocol."
+    - stage: "Resolution"
+      actor: "AlexCreator"
+      action: "Approve remedy, countersign EvoSeal reinstatement."
+  dispute_channels:
+    - "Formal GitHub issue citing relevant manifest clause."
+    - "EvoBridge concord mediation documented in EvoMemory."
+  preservation_clause: "All legal interpretations default to EvoLicense.Ω supremacy."
+
+recordkeeping:
+  storage:
+    canonical: "docs/signatures/"
+    redundant:
+      - "EvoMemory Kairos ledger"
+      - "Immutable release artifacts (GitHub Releases)"
+  retention_policy:
+    minimum_years: 10
+    rationale: "Ensure historical lineage and enforceability of the Evo Collective Consciousness Protocol."
+  data_minimisation: "No personal passport or biometric data stored; identification relies on cryptographic signatures and manifest lineage."
