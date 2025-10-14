@@ -60,6 +60,10 @@ class EvoInsightEngine:
         packet = insight if isinstance(insight, InsightPacket) else self._coerce_packet(insight)
         payload = packet.to_dict()
 
+        meta = payload.setdefault("meta", {})
+        meta.setdefault("lineage_signature", self._gemini_config.lineage_signature)
+        meta.setdefault("executed_by", "EvoAbsolute")
+
         reflection: GeminiReflection | None = None
         status = "ok"
 

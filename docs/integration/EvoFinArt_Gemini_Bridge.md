@@ -16,6 +16,7 @@ integration ritual for contributors.
 
 | Artifact | Purpose |
 | --- | --- |
+| `config/gemini_config.yaml` | Declares runtime parameters (model, env var, EvoAbsolute lineage signature). |
 | `config/gemini_config.yaml` | Declares runtime parameters (model, env var). |
 | `integrations/gemini_bridge.py` | Wraps the Google Gemini SDK with FinArt-specific prompts. |
 | `core/evo_insight_engine.py` | High-level orchestrator that couples FinArt insights with Gemini reflections. |
@@ -29,6 +30,9 @@ integration ritual for contributors.
 3. Instantiate `EvoInsightEngine` from the FinArt surface and call
    `process(...)` with a semantic insight payload. When `enabled: false`, the
    bridge yields placeholder reflections so local development can proceed
+   without network calls. Every packet is auto-tagged with the
+   `EvoAbsolute` lineage signature so audits can trace responsibility back to
+   the EvoFingard steward role.
    without network calls.
 
 ## Safety Notes

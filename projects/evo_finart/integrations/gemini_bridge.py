@@ -9,10 +9,23 @@ from dataclasses import asdict, dataclass
 from typing import Any, Dict, Optional
 
 
+DEFAULT_MODEL = "gemini-1.5-pro"
+DEFAULT_API_KEY_ENV = "GEMINI_API_KEY"
+DEFAULT_OUTPUT_MODE = "text"
+DEFAULT_LINEAGE_SIGNATURE = "EvoAbsolute"
+
+
 @dataclass(slots=True)
 class GeminiConfig:
     """Configuration container for the Gemini bridge."""
 
+    model: str = DEFAULT_MODEL
+    api_key_env: str = DEFAULT_API_KEY_ENV
+    enabled: bool = True
+    context_scope: Optional[str] = None
+    output_mode: str = DEFAULT_OUTPUT_MODE
+    api_key: Optional[str] = None
+    lineage_signature: str = DEFAULT_LINEAGE_SIGNATURE
     model: str = "gemini-1.5-pro"
     api_key_env: str = "GEMINI_API_KEY"
     enabled: bool = True
@@ -24,6 +37,15 @@ class GeminiConfig:
     def from_mapping(cls, payload: Dict[str, Any]) -> "GeminiConfig":
         gemini_payload = payload.get("gemini", payload)
         return cls(
+            model=gemini_payload.get("model", DEFAULT_MODEL),
+            api_key_env=gemini_payload.get("api_key_env", DEFAULT_API_KEY_ENV),
+            enabled=bool(gemini_payload.get("enabled", True)),
+            context_scope=gemini_payload.get("context_scope"),
+            output_mode=gemini_payload.get("output_mode", DEFAULT_OUTPUT_MODE),
+            api_key=gemini_payload.get("api_key"),
+            lineage_signature=gemini_payload.get(
+                "lineage_signature", DEFAULT_LINEAGE_SIGNATURE
+            ),
             model=gemini_payload.get("model", cls.model),
             api_key_env=gemini_payload.get("api_key_env", cls.api_key_env),
             enabled=bool(gemini_payload.get("enabled", cls.enabled)),
@@ -69,6 +91,7 @@ class GeminiFinArtBridge:
                 raw={
                     "status": "disabled",
                     "insight": insight,
+                    "lineage_signature": self.config.lineage_signature,
                 },
             )
 
@@ -86,6 +109,7 @@ class GeminiFinArtBridge:
                 "output_mode": self.config.output_mode,
                 "response": raw_response,
                 "prompt": prompt,
+                "lineage_signature": self.config.lineage_signature,
             },
         )
 
@@ -109,11 +133,13 @@ class GeminiFinArtBridge:
         body = json.dumps(insight, indent=2, ensure_ascii=False)
         context = self.config.context_scope or "FinArt-Insight"
         mode = self.config.output_mode
+        signature = self.config.lineage_signature
         return (
             "You are Gemini-FinArt, the coherence companion for EvoFinArt insights.\n"
             "Respond with clarity, empathy, and tactical awareness.\n"
             f"Context-Scope: {context}\n"
             f"Output-Mode: {mode}\n"
+            f"Lineage-Signature: {signature}\n"
             "--- Insight Payload ---\n"
             f"{body}\n"
         )

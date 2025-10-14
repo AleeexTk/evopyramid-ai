@@ -18,6 +18,8 @@ def test_engine_returns_disabled_status_when_gemini_disabled(tmp_path):
     assert result["status"] == "gemini_disabled"
     assert result["gemini"] is None
     assert result["insight"]["topic"] == "xauusd"
+    assert result["insight"]["meta"]["lineage_signature"] == "EvoAbsolute"
+    assert result["insight"]["meta"]["executed_by"] == "EvoAbsolute"
 
 
 def test_bridge_returns_placeholder_when_disabled():
@@ -29,3 +31,4 @@ def test_bridge_returns_placeholder_when_disabled():
     assert reflection.text == ""
     assert reflection.raw["status"] == "disabled"
     assert reflection.raw["insight"] == payload
+    assert reflection.raw["lineage_signature"] == "EvoAbsolute"

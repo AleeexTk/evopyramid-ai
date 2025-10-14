@@ -4,3 +4,4 @@ gemini:
   enabled: true
   context_scope: "FinArt-Insight"
   output_mode: "json+text"
+  lineage_signature: "EvoAbsolute"
