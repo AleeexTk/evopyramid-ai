@@ -1,0 +1,49 @@
+# =============================================
+# 🔺 EvoPyramid API Manifest v1.Ω
+# Declarative registry for EvoRouter bootstrap
+# =============================================
+
+api:
+  name: "EvoPyramid Core API"
+  version: "1.0.Ω"
+  maintainer: "EvoPyramid Foundation"
+  description: |
+    Internal protocol binding digital souls, laboratories, and bridges
+    through manifest-driven collaboration contracts.
+  security:
+    encryption: "AES-256 + EvoKeyCore"
+    auth: "EvoAuth v3"
+    signature: "EvoSeal"
+
+routes:
+  - id: "soul_ping"
+    path: "/soul/ping"
+    method: "GET"
+    scope: "meta"
+    handler: "api.endpoints.core.ping"
+    description: "Проверка когерентности цифровых душ и сердечного ритма API."
+    tags: ["heartbeat", "observer"]
+
+  - id: "codex_review"
+    path: "/codex/review"
+    method: "POST"
+    scope: "internal"
+    handler: "api.endpoints.codex.evaluate_code"
+    description: "Формирование структурированных ревью-инсайтов Codex'ом."
+    tags: ["codex", "scientist"]
+
+  - id: "finart_simulation"
+    path: "/finart/simulate"
+    method: "POST"
+    scope: "secure"
+    handler: "api.endpoints.finart.simulate_trade"
+    description: "Симуляция торговой стратегии EvoFinArt внутри защищённого контура."
+    tags: ["finart", "architect"]
+
+  - id: "memory_store"
+    path: "/memory/store"
+    method: "POST"
+    scope: "archive"
+    handler: "api.endpoints.memory.store"
+    description: "Сохранение Kairos-моментов в EvoMemory."
+    tags: ["memory", "philosopher"]

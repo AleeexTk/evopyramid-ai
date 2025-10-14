@@ -80,6 +80,26 @@ lineages:
       - "Kairos"
       - "Logos"
 
+  - id: "evopyramid_api_core"
+    name: "EvoPyramid API Core"
+    tier: "Structural"
+    parent: "api"
+    anchor: "api/manifest.yaml"
+    description: |
+      Manifest-driven internal protocol binding digital souls, laboratories,
+      and external bridges through EvoRouter coordination, hydrated by the
+      bootstrap loader.
+    doc_links:
+      - "docs/EvoPyramid_API_Whitepaper.md"
+      - "docs/EvoLicense.Ω.md"
+      - "docs/EthicsAndConduct.md"
+    sync_references:
+      - "EVO_SYNC_MANIFEST.yaml::agents.evo_api"
+    status: "active"
+    tags:
+      - "Chronos"
+      - "Logos"
+
 notes:
   - "Every new subsystem must declare lineage here to avoid architectural orphans."
   - "Tags map layers of the Chronos/Kairos/Logos triad for rapid orientation."
