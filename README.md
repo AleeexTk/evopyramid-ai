@@ -28,11 +28,6 @@ safely.
 - Contributors must follow the [Code of Conduct](CODE_OF_CONDUCT.md) and review
   the [Contributing Guide](CONTRIBUTING.md).
 
-<<<<<<< HEAD
-## Documentation
-
-- Architecture notes live in `docs/ARCHITECTURE.md`.
-=======
 ## Configuration
 
 Runtime configuration for the API layer is managed through environment
@@ -55,19 +50,23 @@ repository root.
 - Architecture notes live in `docs/ARCHITECTURE.md`.
 - Collaboration rituals and role expectations are documented in
   `docs/EVO_COLLAB_GUIDE.md`.
+- The EvoCodex operating contract is published in
+  `docs/EVO_CODEX_USER_CHARTER.md`.
 - Universal activation ritual for syncing any LLM with the architecture lives in
   `docs/EVO_SUMMON.md`.
->>>>>>> main
+- Windows onboarding instructions for EvoFinArt are available in
+  `docs/guides/EvoFinArt_Windows_Installation_RU.md` (Russian).
+- The initial blueprint for the EvoFinArt chat interface prototype is tracked in
+  `docs/blueprints/EvoFinArt_Chat_Interface_Prototype.md`.
+- The Gemini bridge dedicated to EvoFinArt is documented in
+  `docs/integration/EvoFinArt_Gemini_Bridge.md`.
 - Additional ADRs will be located under `docs/adr/`.
 
 ## Community
 
 For questions or proposals, open an issue or email maintainers@evopyramid.ai.
-<<<<<<< HEAD
 
 ## Quick Run
 
 - **Termux (Android):** `bash scripts/start_termux.sh`
 - **Local workstation:** `bash scripts/start_local.sh`
-=======
->>>>>>> main

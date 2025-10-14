@@ -37,3 +37,7 @@ jobs:
           PYTHONUNBUFFERED: "1"
         run: |
           pytest -q || (echo "::warning ::pytest reported failures"; exit 1)
+
+      - name: EvoAbsolute adapter probe
+        run: |
+          python -m roles.evo_absolute.lab.visual_env_adapter ci
