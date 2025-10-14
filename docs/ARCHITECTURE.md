@@ -8,6 +8,11 @@ architecture changes.
 
 - Repository scaffolding with community and automation guidelines.
 - CI workflow running linting (ruff) and a Python bytecode compilation smoke test.
+- EvoFinArt surface now includes a dedicated insight engine (`projects/evo_finart/core/evo_insight_engine.py`)
+  that routes signals through an isolated Gemini bridge and configuration layer.
+- EvoFinArt ↔ Gemini bridge packets are now auto-signed with the `EvoAbsolute`
+  lineage marker so EvoFingard stewardship is visible in every downstream
+  reflection.
 
 ## Next Steps
 
