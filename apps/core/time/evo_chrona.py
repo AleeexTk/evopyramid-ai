@@ -1,11 +1,19 @@
+"""Temporal orchestration utilities for EvoPyramid."""
+
+from __future__ import annotations
+
 import asyncio
-from datetime import datetime, timedelta
-from enum import Enum
-from typing import Dict, Any, Callable, Awaitable, List
 import json
+from collections.abc import Awaitable, Callable
+from contextlib import suppress
+from datetime import UTC, datetime, timedelta
+from enum import Enum
+from typing import Any, Dict, Mapping, Optional, Sequence
 
 
 class TemporalState(Enum):
+    """High-level temporal modes observed by the architecture."""
+
     ACTIVE_FLOW = "active_flow"
     DEEP_FOCUS = "deep_focus"
     REFLECTIVE = "reflective"
@@ -13,46 +21,49 @@ class TemporalState(Enum):
     DREAMING = "dreaming"
 
 
-PulseHandler = Callable[[Dict[str, Any]], Awaitable[None]]
+LegacyPulseHandler = Callable[[Dict[str, Any]], Awaitable[None]]
+AsyncPulseHandler = Callable[[datetime], Awaitable[None] | None]
 
 
-class EvoChrona:
-    """Пульс времени + саморефлексия + регулировка темпа."""
+class _LegacyChrona:
+    """Backward-compatible chrona used by the existing monitoring stack."""
 
     def __init__(self) -> None:
         self.current_time = datetime.utcnow()
         self.tempo = 1.0
         self.drift = 0.0
         self.temporal_state = TemporalState.ACTIVE_FLOW
-        self._pulse_handlers: List[PulseHandler] = []
-        self.self_awareness_interval = 60  # импульсов
-        self.kairos_snapshots: List[Dict[str, Any]] = []
-        self.flow_coherence_history: List[Dict[str, Any]] = []
+        self._pulse_handlers: list[LegacyPulseHandler] = []
+        self.self_awareness_interval = 60
+        self.kairos_snapshots: list[Dict[str, Any]] = []
+        self.flow_coherence_history: list[Dict[str, Any]] = []
 
     async def pulse(self) -> None:
+        """Emit pulses until cancelled."""
+
         pulse_count = 0
         try:
             while True:
                 await asyncio.sleep(max(0.05, 1.0 * self.tempo))
                 self.current_time = datetime.utcnow() + timedelta(seconds=self.drift)
                 pulse_count += 1
-                await self._broadcast_pulse(
-                    {
-                        "timestamp": self.current_time.isoformat(),
-                        "pulse_count": pulse_count,
-                        "tempo": self.tempo,
-                        "temporal_state": self.temporal_state.value,
-                    }
-                )
+                payload = {
+                    "timestamp": self.current_time.isoformat(),
+                    "pulse_count": pulse_count,
+                    "tempo": self.tempo,
+                    "temporal_state": self.temporal_state.value,
+                }
+                await self._broadcast_pulse(payload)
                 if pulse_count % self.self_awareness_interval == 0:
                     await self._trigger_self_awareness()
         except asyncio.CancelledError:
             raise
 
-    def register_pulse_handler(self, handler: PulseHandler) -> None:
-        self._pulse_handlers.append(handler)
+    def register_pulse_handler(self, handler: LegacyPulseHandler) -> None:
+        if handler not in self._pulse_handlers:
+            self._pulse_handlers.append(handler)
 
-    def unregister_pulse_handler(self, handler: PulseHandler) -> None:
+    def unregister_pulse_handler(self, handler: LegacyPulseHandler) -> None:
         if handler in self._pulse_handlers:
             self._pulse_handlers.remove(handler)
 
@@ -84,9 +95,6 @@ class EvoChrona:
                 }
                 self.kairos_snapshots.append(snap)
                 await self._save_kairos_moment(snap)
-                print(
-                    f"🌀 EvoChrona: Kairos snapshot captured (coherence {coherence:.2f})"
-                )
         except Exception as exc:  # pragma: no cover - defensive logging
             print(f"[EvoChrona] self-awareness error: {exc}")
 
@@ -115,72 +123,48 @@ class EvoChrona:
 
     def adjust_tempo(self, new_tempo: float) -> None:
         self.tempo = max(0.1, min(3.0, float(new_tempo)))
-        print(f"🎵 EvoChrona tempo → {self.tempo}x")
 
     def change_temporal_state(self, new_state: TemporalState) -> None:
         self.temporal_state = new_state
-        print(f"🌊 EvoChrona state → {new_state.value}")
-
-
-chrona = EvoChrona()
-"""Asynchronous chrono pulse scheduler."""
-
-from __future__ import annotations
-
-import asyncio
-from collections.abc import Awaitable, Callable
-from contextlib import suppress
-from datetime import UTC, datetime
-from typing import Optional
-
-PulseHandler = Callable[[datetime], Awaitable[None] | None]
 
 
 class EvoChrona:
-    """Emit periodic pulses while respecting a configurable tempo."""
+    """Modern asynchronous chrona used by newer observability flows."""
 
     def __init__(
         self,
         base_interval: float = 1.0,
         *,
         tempo: float = 1.0,
+        memory: Optional[Any] = None,
     ) -> None:
         if base_interval <= 0:
             raise ValueError("base_interval must be greater than zero")
         self.base_interval = base_interval
         self.tempo = tempo
-        self._handlers: set[PulseHandler] = set()
+        self._handlers: set[AsyncPulseHandler] = set()
         self._running = False
         self._task: Optional[asyncio.Task[None]] = None
         self._pulse_count = 0
+        self._memory = memory
 
     @property
     def pulse_count(self) -> int:
-        """Return the number of emitted pulses."""
-
         return self._pulse_count
 
-    def register_handler(self, handler: PulseHandler) -> None:
-        """Register a callback that receives pulse timestamps."""
-
+    def register_handler(self, handler: AsyncPulseHandler) -> None:
         self._handlers.add(handler)
 
-    def unregister_handler(self, handler: PulseHandler) -> None:
-        """Remove a previously registered callback."""
-
+    def unregister_handler(self, handler: AsyncPulseHandler) -> None:
         self._handlers.discard(handler)
 
     async def start(self) -> None:
-        """Start emitting pulses until :meth:`stop` is called."""
-
         if self._running:
             return
         self._running = True
         self._task = asyncio.create_task(self._run(), name="EvoChrona.run")
 
     async def stop(self) -> None:
-        """Stop emitting pulses and await the background loop."""
-
         self._running = False
         if self._task is None:
             return
@@ -190,100 +174,63 @@ class EvoChrona:
         self._task = None
 
     async def pulse(self) -> None:
-        """Wait for the current interval and notify handlers."""
-
         interval = self._compute_interval()
         try:
             await asyncio.sleep(interval)
         except asyncio.CancelledError:
-            # Surface cancellation to the caller while keeping state consistent.
             raise
         self._pulse_count += 1
-        timestamp = datetime.now(UTC)
-        for handler in list(self._handlers):
-            result = handler(timestamp)
-            if asyncio.iscoroutine(result):
-                await result
+        await self._notify_handlers()
 
     async def _run(self) -> None:
         try:
             while self._running:
                 await self.pulse()
         except asyncio.CancelledError:
-            pass
+            raise
 
     def _compute_interval(self) -> float:
-        tempo = max(self.tempo, 1e-6)
-        interval = self.base_interval / tempo
-        return max(0.05, interval)
-"""EvoChrona orchestrates Kairos moments and persistence hooks."""
+        return max(0.02, self.base_interval / max(self.tempo, 0.1))
 
-from __future__ import annotations
+    async def _notify_handlers(self) -> None:
+        timestamp = datetime.now(UTC)
+        for handler in list(self._handlers):
+            try:
+                result = handler(timestamp)
+                if asyncio.iscoroutine(result):
+                    await result
+            except Exception as exc:  # pragma: no cover - defensive logging
+                print(f"[AsyncEvoChrona] handler error: {exc}")
 
-from datetime import datetime
-from typing import Any, Mapping, Protocol
+    def _persist(self, key: str, payload: Mapping[str, Any]) -> None:
+        if self._memory is None:
+            return
+        try:
+            self._memory.save_state(key, payload)
+        except Exception as exc:  # pragma: no cover - defensive logging
+            print(f"[AsyncEvoChrona] memory error: {exc}")
 
-__all__ = ["EvoChrona", "sanitize_moment_key"]
+    def _default_key(self, moment: datetime) -> str:
+        return sanitize_moment_key(moment.isoformat())
 
-# Windows file names cannot include any of the characters below.  We keep the
-# list deliberately small and targeted to avoid overly aggressive replacements.
-_FORBIDDEN_FS_CHARS = set('<>:"/\\|?*')
-
-
-class MemoryWriter(Protocol):
-    """Protocol describing the minimal storage API required by EvoChrona."""
-
-    def save_state(self, key: str, payload: Mapping[str, Any]) -> None:
-        """Persist the given payload under the provided key."""
-
-
-def sanitize_moment_key(candidate: str, *, replacement: str = "_") -> str:
-    """Return a filesystem-safe key derived from ``candidate``.
-
-    Parameters
-    ----------
-    candidate:
-        Raw key generated from the Kairos moment timestamp.
-    replacement:
-        Character used to replace forbidden characters.  Defaults to an
-        underscore so the sanitized key remains readable.
-    """
-
-    sanitized_parts: list[str] = []
-    for char in candidate:
-        if char in _FORBIDDEN_FS_CHARS or char.isspace():
-            sanitized_parts.append(replacement)
-        else:
-            sanitized_parts.append(char)
-    sanitized = "".join(sanitized_parts).strip()
-    # Windows does not allow names ending in a dot or space; guard against the
-    # case where the raw key might include trailing punctuation.
-    sanitized = sanitized.rstrip(". ")
-    return sanitized or replacement
+    def _save_kairos_moment(self, moment: datetime, payload: Mapping[str, Any]) -> str:
+        key = self._default_key(moment)
+        self._persist(key, payload)
+        return key
 
 
-class EvoChrona:
-    """Kairos moment orchestrator used to persist significant time events."""
+def sanitize_moment_key(raw: str) -> str:
+    """Return a filesystem-safe representation of the provided key."""
 
-    def __init__(self, memory: MemoryWriter) -> None:
-        self._memory = memory
+    forbidden: Sequence[str] = tuple('<>:"/\\|?*')
+    sanitized = raw
+    for char in forbidden:
+        sanitized = sanitized.replace(char, "_")
+    sanitized = sanitized.replace(" ", "_")
+    return sanitized
 
-    def _derive_moment_key(self, moment: datetime) -> str:
-        """Return a sanitized storage key derived from ``moment``."""
 
-        formatted = moment.strftime("%Y-%m-%dT%H_%M_%S")
-        tz_offset = moment.strftime("%z")
-        if tz_offset:
-            formatted = f"{formatted}{tz_offset}"
-        return sanitize_moment_key(formatted)
+chrona = _LegacyChrona()
 
-    def _save_kairos_moment(
-        self,
-        moment: datetime,
-        payload: Mapping[str, Any],
-    ) -> str:
-        """Persist a Kairos moment snapshot via the configured memory backend."""
 
-        safe_key = self._derive_moment_key(moment)
-        self._memory.save_state(safe_key, payload)
-        return safe_key
+__all__ = ["EvoChrona", "TemporalState", "chrona", "sanitize_moment_key"]

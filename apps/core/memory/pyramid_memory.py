@@ -1,4 +1,4 @@
-"""Pyramid Memory System used by the Quantum Context Engine."""
+"""Hierarchical memory implementation backed by XML storage."""
 
 from __future__ import annotations
 
@@ -109,7 +109,7 @@ class PyramidMemory:
                     "id": "core_2",
                     "name": "Философия системы",
                     "weight": "0.95",
-                    "content": "Код здесь не пишется - он проявляется",
+                    "content": "Код здесь не пишется - он проявляетя",
                 },
             ],
             "functional": [
@@ -232,10 +232,6 @@ class PyramidMemory:
 class EnhancedDigitalSoulLedger:
     """Enhanced ledger backed by the pyramid memory."""
 
-    def __init__(self) -> None:
-        self.memory = PyramidMemory()
-
-    async def find_related_fragments(self, query: str, threshold: float = 0.85) -> Dict[str, Any]:
     def __init__(
         self,
         memory: PyramidMemory | None = None,
@@ -269,12 +265,6 @@ class EnhancedDigitalSoulLedger:
             }
             for fragment in fragments
         ]
-        return {
-            "has_strong_links": bool(fragments),
-            "fragments": [fragment.id for fragment in fragments],
-            "relevance_score": max((fragment.relevance_score for fragment in fragments), default=0.0),
-            "details": details,
-        }
         return MemoryResult(
             has_strong_links=bool(fragments),
             fragments=[fragment.id for fragment in fragments],

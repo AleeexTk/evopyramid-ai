@@ -23,6 +23,7 @@ class APISettings(BaseSettings):
         default_factory=lambda: [
             "localhost",
             "127.0.0.1",
+            "testserver",
             "evopyramid.com",
             "api.evopyramid.com",
         ]
