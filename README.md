@@ -35,6 +35,10 @@ safely.
   `docs/EVO_COLLAB_GUIDE.md`.
 - Universal activation ritual for syncing any LLM with the architecture lives in
   `docs/EVO_SUMMON.md`.
+- Windows onboarding instructions for EvoFinArt are available in
+  `docs/guides/EvoFinArt_Windows_Installation_RU.md` (Russian).
+- The initial blueprint for the EvoFinArt chat interface prototype is tracked in
+  `docs/blueprints/EvoFinArt_Chat_Interface_Prototype.md`.
 - Additional ADRs will be located under `docs/adr/`.
 
 ## Community
