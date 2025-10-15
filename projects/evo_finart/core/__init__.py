@@ -9,6 +9,8 @@ be consumed by desktop automation scripts.
 
 from __future__ import annotations
 
+import json
+
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Sequence
@@ -117,6 +119,7 @@ class SyncChannelBlueprint:
     workspace: Path
     manifest: SyncManifest
     integration_keys: IntegrationKeyBundle
+    agent: Optional[Mapping[str, Any]]
     protocol: DataExchangeProtocol
     instructions: Sequence[str]
 
@@ -127,6 +130,7 @@ class SyncChannelBlueprint:
             "workspace": str(self.workspace),
             "manifest": self.manifest.to_dict(),
             "integration_keys": self.integration_keys.to_dict(),
+            "agent": dict(self.agent) if self.agent else None,
             "protocol": self.protocol.to_dict(),
             "instructions": list(self.instructions),
         }
@@ -179,6 +183,7 @@ def default_visual_studio_protocol() -> DataExchangeProtocol:
             "Channel operates in monument→echo mode as specified by the global "
             "EVO_SYNC_MANIFEST. Visual Studio clients should batch file diffs "
             "before dispatching to EvoRouter to honor Kairos windows."
+        )
         ),
     )
 
@@ -186,6 +191,18 @@ def default_visual_studio_protocol() -> DataExchangeProtocol:
 def _visual_studio_instructions(workspace: Path, manifest: SyncManifest) -> Sequence[str]:
     agent = manifest.find_agent("evo_absolute") or {}
     repo_url = agent.get("repo", "https://github.com/AleeexTk/EvoFinArt")
+    status = agent.get("status", "active")
+    mode = agent.get("mode", "visual_studio_lab")
+    manifest_hint = f"Manifest: {manifest.path}"
+
+    return (
+        f"EvoAbsolute agent mode `{mode}` (status: {status}). Workspace: {workspace}.",
+        manifest_hint,
+        f"Clone or update EvoFinArt repository in Visual Studio: {repo_url}",
+        "Place `apps/core/keys/evo_keys.json` (or copy the sample) in the lab to unlock scoped integrator credentials.",
+        "Install dependencies: `pip install -r requirements.txt pyyaml`.",
+        "Run `python -m apps.core.context.local_sync_manager` to emit local heartbeats before initiating workspace edits.",
+        "Connect Visual Studio Task Runner to POST payloads to /api/router/sync using the Kairos envelope specified by the protocol.",
     return (
         f"Clone or update EvoFinArt repository in Visual Studio: {repo_url}",
         "Place `apps/core/keys/evo_keys.json` (or copy the sample) in the lab to "
@@ -213,6 +230,7 @@ def build_visual_studio_sync_blueprint(
     keys = load_integration_keys(keys_path)
     channel_protocol = protocol or default_visual_studio_protocol()
     instructions = _visual_studio_instructions(workspace_path, manifest)
+    agent = manifest.find_agent("evo_absolute")
 
     return SyncChannelBlueprint(
         channel_id=channel_id,
@@ -220,9 +238,49 @@ def build_visual_studio_sync_blueprint(
         workspace=workspace_path,
         manifest=manifest,
         integration_keys=keys,
+        agent=agent,
         protocol=channel_protocol,
         instructions=instructions,
     )
+
+
+def initialize_visual_studio_channel(
+    *,
+    workspace: Path | str,
+    channel_id: str = "EvoFinArt.VisualStudio",
+    manifest_path: Path | None = None,
+    keys_path: Path | None = None,
+    protocol: DataExchangeProtocol | None = None,
+) -> SyncChannelBlueprint:
+    """Bootstrap the Visual Studio synchronization channel and log the intent."""
+
+    blueprint = build_visual_studio_sync_blueprint(
+        workspace=workspace,
+        channel_id=channel_id,
+        manifest_path=manifest_path,
+        keys_path=keys_path,
+        protocol=protocol,
+    )
+
+    try:
+        from apps.core.context.local_sync_manager import mark_local_request
+    except Exception:  # pragma: no cover - logger optional in some contexts.
+        return blueprint
+
+    payload = {
+        "channel": blueprint.channel_id,
+        "workspace": str(blueprint.workspace),
+        "manifest": str(blueprint.manifest.path),
+        "environment": blueprint.environment,
+    }
+    mark_local_request(
+        source="EvoAbsolute.VisualStudio",
+        query="bootstrap_sync_channel",
+        result=json.dumps(payload, ensure_ascii=False),
+        env_type=_VISUAL_STUDIO_ENV,
+    )
+
+    return blueprint
 
 
 __all__ = [
@@ -232,6 +290,7 @@ __all__ = [
     "SyncManifest",
     "SyncManifestError",
     "build_visual_studio_sync_blueprint",
+    "initialize_visual_studio_channel",
     "default_visual_studio_protocol",
     "load_integration_keys",
     "load_sync_manifest",
