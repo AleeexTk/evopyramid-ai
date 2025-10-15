@@ -184,6 +184,7 @@ def default_visual_studio_protocol() -> DataExchangeProtocol:
             "EVO_SYNC_MANIFEST. Visual Studio clients should batch file diffs "
             "before dispatching to EvoRouter to honor Kairos windows."
         )
+        ),
     )
 
 
@@ -202,6 +203,15 @@ def _visual_studio_instructions(workspace: Path, manifest: SyncManifest) -> Sequ
         "Install dependencies: `pip install -r requirements.txt pyyaml`.",
         "Run `python -m apps.core.context.local_sync_manager` to emit local heartbeats before initiating workspace edits.",
         "Connect Visual Studio Task Runner to POST payloads to /api/router/sync using the Kairos envelope specified by the protocol.",
+    return (
+        f"Clone or update EvoFinArt repository in Visual Studio: {repo_url}",
+        "Place `apps/core/keys/evo_keys.json` (or copy the sample) in the lab to "
+        "unlock scoped integrator credentials.",
+        "Install dependencies: `pip install -r requirements.txt pyyaml`.",
+        "Run `python -m apps.core.context.local_sync_manager` to emit local "
+        "heartbeats before initiating workspace edits.",
+        "Connect Visual Studio Task Runner to POST payloads to /api/router/sync "
+        "using the Kairos envelope specified by the protocol.",
     )
 
 
