@@ -9,6 +9,17 @@ type ReachabilityTone = 'info' | 'warning';
 interface ReachabilityFeedback {
   tone: ReachabilityTone;
   message: string;
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { AgentMessage, WebAgentTabState } from '../types';
+
+type TabStatus = 'idle' | 'loading';
+
+export interface WebAgentTabProps {
+  tab: WebAgentTabState;
+  onNavigate: (tabId: string, url: string) => void;
+  onSendMessage: (tabId: string, message: string) => void;
+  onToggleMonitor: (tabId: string) => void;
+  onUpdateTab: (tabId: string, updates: Partial<WebAgentTabState>) => void;
 }
 
 type UrlValidationResult =
@@ -22,6 +33,9 @@ const addHttpsScheme = (candidate: string): string => {
 
   return `https://${candidate}`;
 };
+
+  | { ok: true; value: string }
+  | { ok: false; error: string };
 
 const validateHttpUrl = (candidate: string): UrlValidationResult => {
   const trimmed = candidate.trim();
@@ -57,6 +71,31 @@ const validateHttpUrl = (candidate: string): UrlValidationResult => {
     ok: false,
     error: 'Неверный формат URL. Проверьте адрес и попробуйте снова.',
   };
+const isValidHttpUrl = (candidate: string): boolean => {
+  const trimmed = candidate.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return {
+        ok: false,
+        error: 'Неверный протокол. Используйте адрес, начинающийся с http:// или https://.',
+      };
+    }
+
+    return { ok: true, value: url.toString() };
+  } catch (error) {
+    return {
+      ok: false,
+      error: 'Неверный формат URL. Проверьте адрес и попробуйте снова.',
+    };
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch (error) {
+    return false;
+  }
 };
 
 const createTimestampLabel = (value: string): string => {
@@ -179,6 +218,7 @@ export function WebAgentTab({
   }, []);
 
   const handleNavigate = useCallback(async () => {
+  const handleNavigate = useCallback(() => {
     const result = validateHttpUrl(addressValue);
 
     if (!result.ok) {
@@ -232,6 +272,34 @@ export function WebAgentTab({
       }
       setStatus('idle');
     }, 250);
+    const candidate = addressValue.trim();
+
+    if (!candidate) {
+      const message = 'Введите адрес страницы, чтобы продолжить.';
+      setLocalError(message);
+      onUpdateTab(tab.id, { error: message });
+      return;
+    }
+
+    if (!isValidHttpUrl(candidate)) {
+      const message = 'Неверный формат URL. Используйте протоколы http:// или https://.';
+      setLocalError(message);
+      onUpdateTab(tab.id, { error: message });
+      return;
+    }
+
+    setStatus('loading');
+    setLocalError(null);
+    if (result.normalized) {
+      setAddressValue(result.value);
+    }
+    onUpdateTab(tab.id, { error: undefined, url: result.value });
+    onNavigate(tab.id, result.value);
+    onUpdateTab(tab.id, { error: undefined, url: result.value });
+    onNavigate(tab.id, result.value);
+    onUpdateTab(tab.id, { error: undefined, url: candidate });
+    onNavigate(tab.id, candidate);
+    setTimeout(() => setStatus('idle'), 250);
   }, [addressValue, onNavigate, onUpdateTab, tab.id]);
 
   const handleSubmit = useCallback(
@@ -288,6 +356,7 @@ export function WebAgentTab({
               localError
                 ? 'border-rose-500 focus:ring-rose-400'
                 : 'border-slate-700 bg-slate-950/60 focus:border-emerald-500'
+              localError ? 'border-rose-500 focus:ring-rose-400' : 'border-slate-700 bg-slate-950/60 focus:border-emerald-500'
             }`}
             aria-invalid={localError ? 'true' : 'false'}
             aria-describedby={localError ? `tab-${tab.id}-url-error` : undefined}
@@ -339,6 +408,7 @@ export function WebAgentTab({
             {aggregateNotice}
           </p>
         ) : null}
+        <p className="text-xs text-slate-400">{statusLabel}</p>
       </div>
 
       <div className="flex-1 space-y-3 overflow-hidden rounded-lg border border-slate-800 bg-slate-950/60 p-4">
