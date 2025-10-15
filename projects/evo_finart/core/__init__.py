@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Sequence
 
 from apps.core.keys.key_loader import load_keys as _load_evo_keys
+from projects.evo_finart.local import LocalIntegrationSpace, initialize_local_space
 
 try:  # pragma: no cover - optional dependency in lightweight environments.
     import yaml  # type: ignore
@@ -26,6 +27,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 _DEFAULT_SYNC_MANIFEST = _REPO_ROOT / "EVO_SYNC_MANIFEST.yaml"
 _DEFAULT_KEYS_PATH = _REPO_ROOT / "apps/core/keys/evo_keys.json"
 _VISUAL_STUDIO_ENV = "visual_studio_windows"
+_DEFAULT_LOCAL_ROOT = _REPO_ROOT / "projects/evo_finart/local"
 
 
 class SyncManifestError(RuntimeError):
@@ -122,6 +124,7 @@ class SyncChannelBlueprint:
     agent: Optional[Mapping[str, Any]]
     protocol: DataExchangeProtocol
     instructions: Sequence[str]
+    local_space: LocalIntegrationSpace
 
     def to_payload(self) -> Dict[str, Any]:
         return {
@@ -133,6 +136,7 @@ class SyncChannelBlueprint:
             "agent": dict(self.agent) if self.agent else None,
             "protocol": self.protocol.to_dict(),
             "instructions": list(self.instructions),
+            "local_space": self.local_space.to_dict(),
         }
 
 
@@ -184,6 +188,14 @@ def default_visual_studio_protocol() -> DataExchangeProtocol:
             "EVO_SYNC_MANIFEST. Visual Studio clients should batch file diffs "
             "before dispatching to EvoRouter to honor Kairos windows."
         )
+    )
+
+
+def _visual_studio_instructions(
+    workspace: Path,
+    manifest: SyncManifest,
+    local_space: LocalIntegrationSpace,
+) -> Sequence[str]:
         ),
     )
 
@@ -194,15 +206,24 @@ def _visual_studio_instructions(workspace: Path, manifest: SyncManifest) -> Sequ
     status = agent.get("status", "active")
     mode = agent.get("mode", "visual_studio_lab")
     manifest_hint = f"Manifest: {manifest.path}"
+    local_hint = (
+        "Local integration workspace: "
+        f"{local_space.root} (segments: "
+        + ", ".join(f"{name}={path}" for name, path in local_space.segments.items())
+        + ")"
+    )
 
     return (
         f"EvoAbsolute agent mode `{mode}` (status: {status}). Workspace: {workspace}.",
         manifest_hint,
+        local_hint,
         f"Clone or update EvoFinArt repository in Visual Studio: {repo_url}",
         "Place `apps/core/keys/evo_keys.json` (or copy the sample) in the lab to unlock scoped integrator credentials.",
         "Install dependencies: `pip install -r requirements.txt pyyaml`.",
         "Run `python -m apps.core.context.local_sync_manager` to emit local heartbeats before initiating workspace edits.",
         "Connect Visual Studio Task Runner to POST payloads to /api/router/sync using the Kairos envelope specified by the protocol.",
+        "Capture dynamic automation blueprints inside `Local/triggers/` and `Local/channels/` before promoting them upstream.",
+        "Archive Notion exports, meta quota ledgers, and mail digests within the corresponding Local segments for auditability.",
     return (
         f"Clone or update EvoFinArt repository in Visual Studio: {repo_url}",
         "Place `apps/core/keys/evo_keys.json` (or copy the sample) in the lab to "
@@ -222,6 +243,7 @@ def build_visual_studio_sync_blueprint(
     manifest_path: Path | None = None,
     keys_path: Path | None = None,
     protocol: DataExchangeProtocol | None = None,
+    local_root: Path | str | None = None,
 ) -> SyncChannelBlueprint:
     """Create a synchronization blueprint tailored for Visual Studio labs."""
 
@@ -229,6 +251,8 @@ def build_visual_studio_sync_blueprint(
     manifest = load_sync_manifest(manifest_path)
     keys = load_integration_keys(keys_path)
     channel_protocol = protocol or default_visual_studio_protocol()
+    local_space = initialize_local_space(local_root or _DEFAULT_LOCAL_ROOT)
+    instructions = _visual_studio_instructions(workspace_path, manifest, local_space)
     instructions = _visual_studio_instructions(workspace_path, manifest)
     agent = manifest.find_agent("evo_absolute")
 
@@ -241,6 +265,7 @@ def build_visual_studio_sync_blueprint(
         agent=agent,
         protocol=channel_protocol,
         instructions=instructions,
+        local_space=local_space,
     )
 
 
@@ -251,6 +276,7 @@ def initialize_visual_studio_channel(
     manifest_path: Path | None = None,
     keys_path: Path | None = None,
     protocol: DataExchangeProtocol | None = None,
+    local_root: Path | str | None = None,
 ) -> SyncChannelBlueprint:
     """Bootstrap the Visual Studio synchronization channel and log the intent."""
 
@@ -260,6 +286,7 @@ def initialize_visual_studio_channel(
         manifest_path=manifest_path,
         keys_path=keys_path,
         protocol=protocol,
+        local_root=local_root,
     )
 
     try:
@@ -272,6 +299,7 @@ def initialize_visual_studio_channel(
         "workspace": str(blueprint.workspace),
         "manifest": str(blueprint.manifest.path),
         "environment": blueprint.environment,
+        "local_workspace": blueprint.local_space.to_dict(),
     }
     mark_local_request(
         source="EvoAbsolute.VisualStudio",

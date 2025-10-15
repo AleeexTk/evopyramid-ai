@@ -139,6 +139,9 @@ under `roles/evo_absolute/` and exposes:
   environments such as EvoFinArt.
 - `lab/EvoFinArt/*` — embedded manifests and stubs mirroring the external
   repository to keep the architecture aware of laboratory state.
+- `projects/evo_finart/local/` — the lab-scoped "Local" workspace where Visual
+  Studio automation drops dynamic triggers, quota ledgers, Notion caches, and
+  mail digests before they are formalised into shared manifests.
 
 When `python -m roles.evo_absolute.lab.visual_env_adapter` runs (manually or via
 CI) it emits `EvoAbsolute.link_event` payloads captured by Trinity Observer and
