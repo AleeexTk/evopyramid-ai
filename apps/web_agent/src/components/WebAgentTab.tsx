@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
 import type { AgentMessage, WebAgentTabState } from '../types';
 
 type TabStatus = 'idle' | 'loading';
@@ -121,7 +122,7 @@ export function WebAgentTab({
   }, [addressValue, onNavigate, onUpdateTab, tab.id]);
 
   const handleSubmit = useCallback(
-    (event: React.FormEvent<HTMLFormElement>) => {
+    (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       handleNavigate();
     },
