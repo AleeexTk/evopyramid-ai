@@ -1,7 +1,14 @@
-"""High-level orchestration for FinArt insights and Gemini reflections."""
+"""High-level orchestration for FinArt insights and Gemini reflections.
+
+This module keeps the FinArt insight flow lightweight so it can run in
+environments where the external Gemini service is unavailable. The additional
+logging introduced here helps operators trace configuration issues and input
+validation errors without relying on side-channel prints.
+"""
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -14,6 +21,9 @@ from projects.evo_finart.integrations.gemini_bridge import (
 
 
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[1] / "config" / "gemini_config.yaml"
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -47,6 +57,9 @@ class EvoInsightEngine:
         self._config = self._load_config(self._config_path)
         self._gemini_config = GeminiConfig.from_mapping(self._config)
         self._bridge = bridge or GeminiFinArtBridge(self._gemini_config)
+        logger.debug(
+            "EvoInsightEngine initialised", extra={"config_path": str(self._config_path)}
+        )
 
     @property
     def bridge(self) -> GeminiFinArtBridge:
@@ -57,6 +70,23 @@ class EvoInsightEngine:
         return self._bridge.is_enabled
 
     def process(self, insight: InsightPacket | Dict[str, Any]) -> Dict[str, Any]:
+        """Process a FinArt insight and optionally request a Gemini reflection.
+
+        Parameters
+        ----------
+        insight:
+            Either an :class:`InsightPacket` instance or a mapping with the
+            ``topic`` and ``payload`` keys. When a mapping is supplied it will be
+            coerced into an :class:`InsightPacket` to guarantee shape
+            consistency.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the normalised insight payload, the Gemini
+            reflection (if produced) and metadata about the configuration used
+            to process the request.
+        """
         packet = insight if isinstance(insight, InsightPacket) else self._coerce_packet(insight)
         payload = packet.to_dict()
 
@@ -67,8 +97,9 @@ class EvoInsightEngine:
             reflection = self.bridge.reflect(payload)
         else:
             status = "gemini_disabled"
+            logger.debug("Gemini disabled for EvoInsightEngine run", extra={"topic": packet.topic})
 
-        return {
+        result = {
             "insight": payload,
             "gemini": self._serialize_reflection(reflection),
             "status": status,
@@ -77,21 +108,30 @@ class EvoInsightEngine:
                 "gemini": self.bridge.to_dict(),
             },
         }
+        logger.debug("EvoInsightEngine completed", extra={"status": status, "topic": packet.topic})
+        return result
 
     def _load_config(self, path: Path) -> Dict[str, Any]:
+        """Load Gemini configuration from YAML without external dependencies."""
         if not path.exists():
+            logger.warning("Gemini config file missing; defaulting to disabled state", extra={"path": str(path)})
             return {"gemini": {"enabled": False}}
         return self._parse_simple_yaml(path.read_text(encoding="utf-8"))
 
     def _coerce_packet(self, payload: Dict[str, Any]) -> InsightPacket:
+        """Normalise an incoming mapping into an :class:`InsightPacket`."""
         topic = payload.get("topic", "unspecified")
         body = payload.get("payload", {})
         meta = payload.get("meta")
         if not isinstance(body, dict):
+            logger.error(
+                "Insight payload must be a dictionary", extra={"topic": topic, "payload_type": type(body).__name__}
+            )
             raise TypeError("Insight payload must be a dictionary.")
         return InsightPacket(topic=topic, payload=body, meta=meta)
 
     def _parse_simple_yaml(self, content: str) -> Dict[str, Any]:
+        """Parse a subset of YAML used by the embedded Gemini configuration."""
         root: Dict[str, Any] = {}
         current_section: Optional[str] = None
 
@@ -120,6 +160,7 @@ class EvoInsightEngine:
         return root
 
     def _coerce_scalar(self, value: str) -> Any:
+        """Convert scalar string values found in configuration files."""
         if not value:
             return ""
         if value in {"true", "True"}:
@@ -141,6 +182,7 @@ class EvoInsightEngine:
         return value
 
     def _serialize_reflection(self, reflection: GeminiReflection | None) -> Optional[Dict[str, Any]]:
+        """Convert a :class:`GeminiReflection` into a serialisable mapping."""
         if reflection is None:
             return None
         return {
