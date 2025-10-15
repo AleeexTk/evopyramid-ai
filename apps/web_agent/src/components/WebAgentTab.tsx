@@ -12,6 +12,17 @@ export interface WebAgentTabProps {
 }
 
 type UrlValidationResult =
+  | { ok: true; value: string; normalized: boolean }
+  | { ok: false; error: string };
+
+const addHttpsScheme = (candidate: string): string => {
+  if (/^https?:\/\//i.test(candidate)) {
+    return candidate;
+  }
+
+  return `https://${candidate}`;
+};
+
   | { ok: true; value: string }
   | { ok: false; error: string };
 
@@ -19,6 +30,36 @@ const validateHttpUrl = (candidate: string): UrlValidationResult => {
   const trimmed = candidate.trim();
   if (!trimmed) {
     return { ok: false, error: 'Введите адрес страницы, чтобы продолжить.' };
+  }
+
+  const attempts: Array<{ value: string; normalized: boolean }> = [
+    { value: trimmed, normalized: false },
+  ];
+
+  if (!/^https?:\/\//i.test(trimmed)) {
+    attempts.push({ value: addHttpsScheme(trimmed), normalized: true });
+  }
+
+  for (const attempt of attempts) {
+    try {
+      const url = new URL(attempt.value);
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        return {
+          ok: false,
+          error: 'Неверный протокол. Используйте адрес, начинающийся с http:// или https://.',
+        };
+      }
+
+      return { ok: true, value: url.toString(), normalized: attempt.normalized };
+    } catch (error) {
+      // Продолжим попытки, если схема была добавлена автоматически.
+    }
+  }
+
+  return {
+    ok: false,
+    error: 'Неверный формат URL. Проверьте адрес и попробуйте снова.',
+  };
 const isValidHttpUrl = (candidate: string): boolean => {
   const trimmed = candidate.trim();
   if (!trimmed) {
@@ -113,6 +154,11 @@ export function WebAgentTab({
 
     setStatus('loading');
     setLocalError(null);
+    if (result.normalized) {
+      setAddressValue(result.value);
+    }
+    onUpdateTab(tab.id, { error: undefined, url: result.value });
+    onNavigate(tab.id, result.value);
     onUpdateTab(tab.id, { error: undefined, url: result.value });
     onNavigate(tab.id, result.value);
     onUpdateTab(tab.id, { error: undefined, url: candidate });
@@ -159,6 +205,8 @@ export function WebAgentTab({
               }
             }}
             placeholder="https://example.com"
+            type="url"
+            inputMode="url"
             className={`flex-1 rounded-md border px-3 py-2 text-sm text-slate-100 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
               localError ? 'border-rose-500 focus:ring-rose-400' : 'border-slate-700 bg-slate-950/60 focus:border-emerald-500'
             }`}
@@ -187,6 +235,8 @@ export function WebAgentTab({
           <p
             id={`tab-${tab.id}-url-error`}
             className="text-sm font-medium text-rose-400"
+            role="alert"
+            aria-live="assertive"
           >
             {localError}
           </p>
