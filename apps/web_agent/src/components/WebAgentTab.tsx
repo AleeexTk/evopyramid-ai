@@ -11,6 +11,14 @@ export interface WebAgentTabProps {
   onUpdateTab: (tabId: string, updates: Partial<WebAgentTabState>) => void;
 }
 
+type UrlValidationResult =
+  | { ok: true; value: string }
+  | { ok: false; error: string };
+
+const validateHttpUrl = (candidate: string): UrlValidationResult => {
+  const trimmed = candidate.trim();
+  if (!trimmed) {
+    return { ok: false, error: 'Введите адрес страницы, чтобы продолжить.' };
 const isValidHttpUrl = (candidate: string): boolean => {
   const trimmed = candidate.trim();
   if (!trimmed) {
@@ -19,6 +27,19 @@ const isValidHttpUrl = (candidate: string): boolean => {
 
   try {
     const url = new URL(trimmed);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return {
+        ok: false,
+        error: 'Неверный протокол. Используйте адрес, начинающийся с http:// или https://.',
+      };
+    }
+
+    return { ok: true, value: url.toString() };
+  } catch (error) {
+    return {
+      ok: false,
+      error: 'Неверный формат URL. Проверьте адрес и попробуйте снова.',
+    };
     return url.protocol === 'http:' || url.protocol === 'https:';
   } catch (error) {
     return false;
@@ -69,6 +90,11 @@ export function WebAgentTab({
   }, [tab.error]);
 
   const handleNavigate = useCallback(() => {
+    const result = validateHttpUrl(addressValue);
+
+    if (!result.ok) {
+      setLocalError(result.error);
+      onUpdateTab(tab.id, { error: result.error });
     const candidate = addressValue.trim();
 
     if (!candidate) {
@@ -87,6 +113,8 @@ export function WebAgentTab({
 
     setStatus('loading');
     setLocalError(null);
+    onUpdateTab(tab.id, { error: undefined, url: result.value });
+    onNavigate(tab.id, result.value);
     onUpdateTab(tab.id, { error: undefined, url: candidate });
     onNavigate(tab.id, candidate);
     setTimeout(() => setStatus('idle'), 250);
