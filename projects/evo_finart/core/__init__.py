@@ -196,6 +196,11 @@ def _visual_studio_instructions(
     manifest: SyncManifest,
     local_space: LocalIntegrationSpace,
 ) -> Sequence[str]:
+        ),
+    )
+
+
+def _visual_studio_instructions(workspace: Path, manifest: SyncManifest) -> Sequence[str]:
     agent = manifest.find_agent("evo_absolute") or {}
     repo_url = agent.get("repo", "https://github.com/AleeexTk/EvoFinArt")
     status = agent.get("status", "active")
@@ -219,6 +224,15 @@ def _visual_studio_instructions(
         "Connect Visual Studio Task Runner to POST payloads to /api/router/sync using the Kairos envelope specified by the protocol.",
         "Capture dynamic automation blueprints inside `Local/triggers/` and `Local/channels/` before promoting them upstream.",
         "Archive Notion exports, meta quota ledgers, and mail digests within the corresponding Local segments for auditability.",
+    return (
+        f"Clone or update EvoFinArt repository in Visual Studio: {repo_url}",
+        "Place `apps/core/keys/evo_keys.json` (or copy the sample) in the lab to "
+        "unlock scoped integrator credentials.",
+        "Install dependencies: `pip install -r requirements.txt pyyaml`.",
+        "Run `python -m apps.core.context.local_sync_manager` to emit local "
+        "heartbeats before initiating workspace edits.",
+        "Connect Visual Studio Task Runner to POST payloads to /api/router/sync "
+        "using the Kairos envelope specified by the protocol.",
     )
 
 
@@ -239,6 +253,7 @@ def build_visual_studio_sync_blueprint(
     channel_protocol = protocol or default_visual_studio_protocol()
     local_space = initialize_local_space(local_root or _DEFAULT_LOCAL_ROOT)
     instructions = _visual_studio_instructions(workspace_path, manifest, local_space)
+    instructions = _visual_studio_instructions(workspace_path, manifest)
     agent = manifest.find_agent("evo_absolute")
 
     return SyncChannelBlueprint(
