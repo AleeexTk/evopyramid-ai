@@ -100,6 +100,24 @@ lineages:
       - "Chronos"
       - "Logos"
 
+  - id: "evofinart_local_space"
+    name: "EvoFinArt Local Integration Space"
+    tier: "Structural"
+    parent: "projects/evo_finart"
+    anchor: "projects/evo_finart/local"
+    description: |
+      Windows-oriented laboratory workspace that captures EvoAbsolute Visual
+      Studio automation artifacts (channels, triggers, quotas, mail digests)
+      without polluting the shared EvoPyramid manifests.
+    doc_links:
+      - "projects/evo_finart/local/README.md"
+    sync_references:
+      - "EVO_SYNC_MANIFEST.yaml::agents.evo_absolute"
+    status: "active"
+    tags:
+      - "Chronos"
+      - "Kairos"
+
 notes:
   - "Every new subsystem must declare lineage here to avoid architectural orphans."
   - "Tags map layers of the Chronos/Kairos/Logos triad for rapid orientation."

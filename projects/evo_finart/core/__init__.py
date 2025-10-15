@@ -1,0 +1,310 @@
+"""EvoFinArt core synchronization gateway for external integrators.
+
+This module formalizes the canonical entry point used by :class:`EvoAbsolute`
+to align a local Visual Studio laboratory with the living EvoPyramid
+architecture.  It exposes utilities for retrieving synchronization manifests,
+loading integration keys, and assembling a complete channel blueprint that can
+be consumed by desktop automation scripts.
+"""
+
+from __future__ import annotations
+
+import json
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, Mapping, Optional, Sequence
+
+from apps.core.keys.key_loader import load_keys as _load_evo_keys
+from projects.evo_finart.local import LocalIntegrationSpace, initialize_local_space
+
+try:  # pragma: no cover - optional dependency in lightweight environments.
+    import yaml  # type: ignore
+except Exception:  # pragma: no cover
+    yaml = None  # type: ignore
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_DEFAULT_SYNC_MANIFEST = _REPO_ROOT / "EVO_SYNC_MANIFEST.yaml"
+_DEFAULT_KEYS_PATH = _REPO_ROOT / "apps/core/keys/evo_keys.json"
+_VISUAL_STUDIO_ENV = "visual_studio_windows"
+_DEFAULT_LOCAL_ROOT = _REPO_ROOT / "projects/evo_finart/local"
+
+
+class SyncManifestError(RuntimeError):
+    """Raised when the synchronization manifest cannot be parsed."""
+
+
+@dataclass(slots=True)
+class DataExchangeProtocol:
+    """Semantic contract for EvoPyramid data exchange channels."""
+
+    name: str
+    version: str
+    transport: str
+    payload_format: str
+    heartbeat_interval: int
+    handshake: Sequence[str]
+    notes: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "name": self.name,
+            "version": self.version,
+            "transport": self.transport,
+            "payload_format": self.payload_format,
+            "heartbeat_interval": self.heartbeat_interval,
+            "handshake": list(self.handshake),
+            "notes": self.notes,
+        }
+
+
+@dataclass(slots=True)
+class IntegrationKeyBundle:
+    """Wrapper around EvoPyramid integration keys."""
+
+    path: Path
+    payload: Mapping[str, Any]
+
+    def for_agent(self, agent_id: str) -> Mapping[str, Any]:
+        data = self.payload.get(agent_id, {})
+        if isinstance(data, Mapping):
+            return data
+        return {}
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "path": str(self.path),
+            "payload": dict(self.payload),
+        }
+
+
+@dataclass(slots=True)
+class SyncManifest:
+    """Holds the parsed synchronization manifest documents."""
+
+    path: Path
+    documents: Sequence[Mapping[str, Any]]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "path": str(self.path),
+            "documents": [dict(doc) for doc in self.documents],
+        }
+
+    @property
+    def sync_policy(self) -> Mapping[str, Any]:
+        return self.documents[0].get("sync_policy", {}) if self.documents else {}
+
+    @property
+    def directives(self) -> Sequence[Mapping[str, Any]]:
+        return self.documents[0].get("directives", []) if self.documents else []
+
+    @property
+    def agents(self) -> Sequence[Mapping[str, Any]]:
+        if len(self.documents) > 1:
+            return self.documents[1].get("agents", [])
+        return self.documents[0].get("agents", []) if self.documents else []
+
+    def find_agent(self, agent_id: str) -> Optional[Mapping[str, Any]]:
+        for agent in self.agents:
+            if agent.get("id") == agent_id:
+                return agent
+        return None
+
+
+@dataclass(slots=True)
+class SyncChannelBlueprint:
+    """Aggregated synchronization plan for EvoFinArt laboratories."""
+
+    channel_id: str
+    environment: str
+    workspace: Path
+    manifest: SyncManifest
+    integration_keys: IntegrationKeyBundle
+    agent: Optional[Mapping[str, Any]]
+    protocol: DataExchangeProtocol
+    instructions: Sequence[str]
+    local_space: LocalIntegrationSpace
+
+    def to_payload(self) -> Dict[str, Any]:
+        return {
+            "channel_id": self.channel_id,
+            "environment": self.environment,
+            "workspace": str(self.workspace),
+            "manifest": self.manifest.to_dict(),
+            "integration_keys": self.integration_keys.to_dict(),
+            "agent": dict(self.agent) if self.agent else None,
+            "protocol": self.protocol.to_dict(),
+            "instructions": list(self.instructions),
+            "local_space": self.local_space.to_dict(),
+        }
+
+
+def load_sync_manifest(path: Path | None = None) -> SyncManifest:
+    """Load the Evo synchronization manifest as structured documents."""
+
+    manifest_path = path or _DEFAULT_SYNC_MANIFEST
+    if not manifest_path.exists():
+        raise SyncManifestError(f"Sync manifest not found: {manifest_path}")
+
+    if yaml is None:
+        raise SyncManifestError(
+            "PyYAML is required to parse the Evo sync manifest. Install it via "
+            "`pip install pyyaml` inside the Visual Studio environment."
+        )
+
+    raw_content = manifest_path.read_text(encoding="utf-8")
+    documents = [doc or {} for doc in yaml.safe_load_all(raw_content)]  # type: ignore[arg-type]
+    if not documents:
+        raise SyncManifestError(f"Manifest {manifest_path} does not contain any documents")
+    return SyncManifest(path=manifest_path, documents=documents)
+
+
+def load_integration_keys(path: Path | None = None) -> IntegrationKeyBundle:
+    """Load EvoPyramid integration keys (sample-aware)."""
+
+    keys_path = path or _DEFAULT_KEYS_PATH
+    payload = _load_evo_keys(str(keys_path))
+    return IntegrationKeyBundle(path=keys_path, payload=payload)
+
+
+def default_visual_studio_protocol() -> DataExchangeProtocol:
+    """Construct the canonical Visual Studio ↔ EvoPyramid protocol."""
+
+    return DataExchangeProtocol(
+        name="EvoSync.VisualStudio",
+        version="1.0",
+        transport="https+websocket",
+        payload_format="json+kairos-envelope",
+        heartbeat_interval=60,
+        handshake=(
+            "VS → local_sync_manager.py :: emit workspace heartbeat",
+            "local_sync_manager.py → EvoRouter :: POST /api/router/sync",
+            "EvoRouter → EvoMemory :: persist channel state",
+            "Trinity Observer :: verify coherence and acknowledge",
+        ),
+        notes=(
+            "Channel operates in monument→echo mode as specified by the global "
+            "EVO_SYNC_MANIFEST. Visual Studio clients should batch file diffs "
+            "before dispatching to EvoRouter to honor Kairos windows."
+        )
+    )
+
+
+def _visual_studio_instructions(
+    workspace: Path,
+    manifest: SyncManifest,
+    local_space: LocalIntegrationSpace,
+) -> Sequence[str]:
+    agent = manifest.find_agent("evo_absolute") or {}
+    repo_url = agent.get("repo", "https://github.com/AleeexTk/EvoFinArt")
+    status = agent.get("status", "active")
+    mode = agent.get("mode", "visual_studio_lab")
+    manifest_hint = f"Manifest: {manifest.path}"
+    local_hint = (
+        "Local integration workspace: "
+        f"{local_space.root} (segments: "
+        + ", ".join(f"{name}={path}" for name, path in local_space.segments.items())
+        + ")"
+    )
+
+    return (
+        f"EvoAbsolute agent mode `{mode}` (status: {status}). Workspace: {workspace}.",
+        manifest_hint,
+        local_hint,
+        f"Clone or update EvoFinArt repository in Visual Studio: {repo_url}",
+        "Place `apps/core/keys/evo_keys.json` (or copy the sample) in the lab to unlock scoped integrator credentials.",
+        "Install dependencies: `pip install -r requirements.txt pyyaml`.",
+        "Run `python -m apps.core.context.local_sync_manager` to emit local heartbeats before initiating workspace edits.",
+        "Connect Visual Studio Task Runner to POST payloads to /api/router/sync using the Kairos envelope specified by the protocol.",
+        "Capture dynamic automation blueprints inside `Local/triggers/` and `Local/channels/` before promoting them upstream.",
+        "Archive Notion exports, meta quota ledgers, and mail digests within the corresponding Local segments for auditability.",
+    )
+
+
+def build_visual_studio_sync_blueprint(
+    *,
+    workspace: Path | str,
+    channel_id: str = "EvoFinArt.VisualStudio",
+    manifest_path: Path | None = None,
+    keys_path: Path | None = None,
+    protocol: DataExchangeProtocol | None = None,
+    local_root: Path | str | None = None,
+) -> SyncChannelBlueprint:
+    """Create a synchronization blueprint tailored for Visual Studio labs."""
+
+    workspace_path = Path(workspace).expanduser().resolve()
+    manifest = load_sync_manifest(manifest_path)
+    keys = load_integration_keys(keys_path)
+    channel_protocol = protocol or default_visual_studio_protocol()
+    local_space = initialize_local_space(local_root or _DEFAULT_LOCAL_ROOT)
+    instructions = _visual_studio_instructions(workspace_path, manifest, local_space)
+    agent = manifest.find_agent("evo_absolute")
+
+    return SyncChannelBlueprint(
+        channel_id=channel_id,
+        environment=_VISUAL_STUDIO_ENV,
+        workspace=workspace_path,
+        manifest=manifest,
+        integration_keys=keys,
+        agent=agent,
+        protocol=channel_protocol,
+        instructions=instructions,
+        local_space=local_space,
+    )
+
+
+def initialize_visual_studio_channel(
+    *,
+    workspace: Path | str,
+    channel_id: str = "EvoFinArt.VisualStudio",
+    manifest_path: Path | None = None,
+    keys_path: Path | None = None,
+    protocol: DataExchangeProtocol | None = None,
+    local_root: Path | str | None = None,
+) -> SyncChannelBlueprint:
+    """Bootstrap the Visual Studio synchronization channel and log the intent."""
+
+    blueprint = build_visual_studio_sync_blueprint(
+        workspace=workspace,
+        channel_id=channel_id,
+        manifest_path=manifest_path,
+        keys_path=keys_path,
+        protocol=protocol,
+        local_root=local_root,
+    )
+
+    try:
+        from apps.core.context.local_sync_manager import mark_local_request
+    except Exception:  # pragma: no cover - logger optional in some contexts.
+        return blueprint
+
+    payload = {
+        "channel": blueprint.channel_id,
+        "workspace": str(blueprint.workspace),
+        "manifest": str(blueprint.manifest.path),
+        "environment": blueprint.environment,
+        "local_workspace": blueprint.local_space.to_dict(),
+    }
+    mark_local_request(
+        source="EvoAbsolute.VisualStudio",
+        query="bootstrap_sync_channel",
+        result=json.dumps(payload, ensure_ascii=False),
+        env_type=_VISUAL_STUDIO_ENV,
+    )
+
+    return blueprint
+
+
+__all__ = [
+    "DataExchangeProtocol",
+    "IntegrationKeyBundle",
+    "SyncChannelBlueprint",
+    "SyncManifest",
+    "SyncManifestError",
+    "build_visual_studio_sync_blueprint",
+    "initialize_visual_studio_channel",
+    "default_visual_studio_protocol",
+    "load_integration_keys",
+    "load_sync_manifest",
+]
