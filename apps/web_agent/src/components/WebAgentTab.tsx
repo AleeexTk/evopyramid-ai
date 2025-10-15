@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { recordReachabilityOutcome } from '../reachabilityMetrics';
 import type { AgentMessage, WebAgentTabState } from '../types';
 
 type TabStatus = 'idle' | 'checking' | 'loading';
@@ -189,6 +190,7 @@ export function WebAgentTab({
   const [status, setStatus] = useState<TabStatus>('idle');
   const [localError, setLocalError] = useState<string | null>(null);
   const [reachabilityFeedback, setReachabilityFeedback] = useState<ReachabilityFeedback | null>(null);
+  const [aggregateNotice, setAggregateNotice] = useState<string | null>(null);
   const navigationCheckRef = useRef(0);
   const idleTimeoutRef = useRef<number | null>(null);
   const isMountedRef = useRef(true);
@@ -245,6 +247,15 @@ export function WebAgentTab({
 
     if (!isMountedRef.current || navigationCheckRef.current !== currentCheckId) {
       return;
+    }
+
+    const outcome = feedback ? (feedback.tone === 'warning' ? 'warning' : 'info') : 'ok';
+    const aggregateResult = recordReachabilityOutcome(result.value, outcome, feedback?.message);
+
+    if (aggregateResult?.notice ?? false) {
+      setAggregateNotice(aggregateResult.notice);
+    } else {
+      setAggregateNotice(null);
     }
 
     if (feedback) {
@@ -334,6 +345,9 @@ export function WebAgentTab({
               if (reachabilityFeedback) {
                 setReachabilityFeedback(null);
               }
+              if (aggregateNotice) {
+                setAggregateNotice(null);
+              }
             }}
             placeholder="https://example.com"
             type="url"
@@ -387,6 +401,11 @@ export function WebAgentTab({
             aria-live="polite"
           >
             {reachabilityFeedback.message}
+          </p>
+        ) : null}
+        {aggregateNotice ? (
+          <p className="text-xs text-amber-300" role="status" aria-live="polite">
+            {aggregateNotice}
           </p>
         ) : null}
         <p className="text-xs text-slate-400">{statusLabel}</p>
