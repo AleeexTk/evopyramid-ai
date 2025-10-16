@@ -57,6 +57,7 @@ evo_local_capability:
         - "Aliases: evo_diag, evo_sync, evo_run"
         - "Periodic reflective checkpoints via EvoChronosLog.md"
         - "Codex-local branch commits orchestrated on-device"
+        - "Reflex learning protocol invoked through manifests/EVO_REFLEX_LEARNING.yaml"
       resonance: "Structural"
     - id: "symbolic_incubator"
       title: "Symbolic Incubator Awareness"

@@ -119,6 +119,25 @@ lineages:
       - "Kairos"
       - "Syntonic"
 
+  - id: "evo_reflex_learning"
+    name: "Evo Reflex Learning Protocol"
+    tier: "Cognitive"
+    parent: "manifests"
+    anchor: "manifests/EVO_REFLEX_LEARNING.yaml"
+    description: |
+      Reflexive conflict assimilation engine that pauses colliding Termux processes,
+      extracts reusable behavior, and reintegrates the refined logic into the EvoCanon
+      so the architecture gains resilience mid-execution.
+    doc_links:
+      - "manifests/EVO_LOCAL_MODE.yaml"
+      - "manifests/EVO_LOCAL_CAPABILITY.yaml"
+    sync_references:
+      - "EVO_SYNC_MANIFEST.yaml::agents.evo_reflex_learning"
+    status: "active"
+    tags:
+      - "Chronos"
+      - "Kairos"
+
   - id: "evofinart_local_space"
     name: "EvoFinArt Local Integration Space"
     tier: "Structural"
