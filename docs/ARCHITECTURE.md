@@ -87,6 +87,23 @@ the active canon.
 - `docs/EVO_CONTAINER.md` and `docs/EVO_SOUL.md` – deep dives into the container
   mechanics and soul sync philosophy.
 
+## EvoCodex Governance Bridge
+
+To keep branch protections aligned with the living canon, the **EvoBridge Codex
+Governance Engine** (`EvoBridge/evo_codex_internal.py`) now exposes an
+authenticated bridge into GitHub's ruleset REST API. The accompanying workflow
+`.github/workflows/evo_codex_ruleset.yml` installs the bridge, hydrates required
+dependencies, and applies the declarative ruleset stored at
+`.github/rulesets/EvoRulesProto.yaml`.
+
+- Governance authority is described in `EVO_CODEX_INTERNAL.yaml`, granting the
+  Codex agent explicit `manage_rulesets` capability while restricting file-level
+  permissions.
+- EvoCharter section **8️⃣ Governance Clause** encodes the approval ritual so
+  that automated rule applications remain under Meta Architect oversight.
+- Applied responses are synchronised back into the architecture ledger via the
+  lineage entry `evobridge_codex_governor` in `EVO_ARCH_MAP.yaml`.
+
 ## EvoPyramid API Nervous System
 
 Phase Ω.3 activates the **EvoPyramid API Core** housed under `api/`. The
