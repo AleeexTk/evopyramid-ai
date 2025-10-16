@@ -57,6 +57,13 @@ directives:
       - "Notion Map View"
       - "Kairos Cohesion Dashboard"
       - "Kairos Compass Board"
+    evo_dashboard_exports:
+      script: "scripts/export_dashboards.py"
+      outputs:
+        - "EvoDashboard/kairos_compass.json"
+        - "EvoDashboard/cohesion_dashboard.json"
+        - "EvoDashboard/timeline_map.json"
+      ci_guardian: ".github/workflows/ci.yml::Kairos Dashboard Export"
     security:
       signing: "EvoSeal AES256"
       notion_permissions: "Row-level access with EvoAuth v3 scope"

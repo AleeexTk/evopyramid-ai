@@ -1,0 +1,412 @@
+"""Automated export of Kairos ↔ Logos dashboards for EvoDashboard.
+
+This utility reads the Trinity telemetry ledger (``logs/trinity_metrics.log``)
+and synthesises JSON payloads for the Kairos Compass, Cohesion Dashboard, and
+Timeline ↔ Map bundle.  The generated files are stored inside the EvoDashboard
+workspace so GitHub Actions and local rituals can surface the latest
+visualisations without manual exports from Notion.
+
+The exporter is intentionally tolerant of partially populated log entries.
+Historical records have evolved alongside the architecture; some carry the
+``KairosEvent`` schema while others reflect ``TrinityObserver`` snapshots.  To
+keep the dashboards available across eras, the exporter performs progressive
+field extraction with sensible defaults and documents any skipped anomalies in
+its output metadata.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+from collections import defaultdict
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional
+
+
+DEFAULT_LOG_PATH = Path("logs/trinity_metrics.log")
+DEFAULT_OUTPUT_DIR = Path("EvoDashboard")
+
+
+@dataclass
+class DashboardArtifacts:
+    """Container for the generated dashboard payloads."""
+
+    kairos_compass: Dict[str, Any]
+    cohesion_dashboard: Dict[str, Any]
+    timeline_map: Dict[str, Any]
+
+
+def _load_log_records(log_path: Path) -> List[Dict[str, Any]]:
+    """Load JSONL records from the Trinity metrics log.
+
+    Parameters
+    ----------
+    log_path:
+        Path to ``logs/trinity_metrics.log``.
+
+    Returns
+    -------
+    list[dict]
+        Parsed records.  Invalid JSON lines are skipped.
+    """
+
+    if not log_path.exists():
+        return []
+
+    records: List[Dict[str, Any]] = []
+    for line in log_path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            payload = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(payload, dict):
+            records.append(payload)
+    return records
+
+
+def _ensure_output_dir(output_dir: Path) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+
+def _parse_float(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return float(value)
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        mapping = {"low": 0.25, "medium": 0.5, "high": 0.85}
+        if lowered in mapping:
+            return mapping[lowered]
+        try:
+            return float(lowered)
+        except ValueError:
+            return None
+    return None
+
+
+def _parse_int(value: Any) -> Optional[int]:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, (int, float)):
+        return int(round(value))
+    if isinstance(value, str):
+        try:
+            return int(value)
+        except ValueError:
+            return None
+    return None
+
+
+def _extract_first(record: Dict[str, Any], *paths: Iterable[str]) -> Any:
+    for path in paths:
+        node: Any = record
+        for key in path:
+            if not isinstance(node, dict) or key not in node:
+                break
+            node = node[key]
+        else:
+            return node
+    return None
+
+
+def _extract_timestamp(record: Dict[str, Any]) -> str:
+    candidate = _extract_first(
+        record,
+        ("timestamp",),
+        ("observed_at",),
+        ("time",),
+        ("meta", "timestamp"),
+        ("system_state", "last_peak_moment"),
+        ("components", "chronos", "timestamp"),
+    )
+    if isinstance(candidate, str):
+        return candidate
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _extract_agent_tags(record: Dict[str, Any]) -> List[str]:
+    raw_tags = _extract_first(
+        record,
+        ("agent_tags",),
+        ("agents",),
+        ("meta", "agent_tags"),
+        ("metadata", "agent_tags"),
+    )
+    if raw_tags is None:
+        return []
+    if isinstance(raw_tags, str):
+        return [tag.strip() for tag in raw_tags.split(",") if tag.strip()]
+    if isinstance(raw_tags, list):
+        return [str(tag) for tag in raw_tags]
+    return [str(raw_tags)]
+
+
+def _build_kairos_compass(records: List[Dict[str, Any]], source: Path) -> Dict[str, Any]:
+    matrix: Dict[str, Dict[str, Dict[str, float]]] = defaultdict(
+        lambda: {"low": {"count": 0, "avg_impact": 0.0}, "mid": {"count": 0, "avg_impact": 0.0}, "high": {"count": 0, "avg_impact": 0.0}}
+    )
+    events: List[Dict[str, Any]] = []
+    skipped = 0
+
+    for record in records:
+        impact = _parse_float(
+            _extract_first(
+                record,
+                ("impact",),
+                ("metrics", "impact"),
+                ("components", "kairos", "impact"),
+                ("state_vectors", "conceptual_clarity"),
+                ("trinity_coherence",),
+            )
+        )
+        kairos_level = _parse_int(
+            _extract_first(
+                record,
+                ("kairos_level",),
+                ("metrics", "kairos_level"),
+                ("components", "kairos", "level"),
+                ("components", "kairos", "kairos_level"),
+            )
+        )
+
+        if impact is None or kairos_level is None:
+            skipped += 1
+            continue
+
+        if impact < 0:
+            impact = 0.0
+        if impact > 1:
+            # Normalise wide ranges by assuming 0-100 semantics.
+            impact = min(impact / 100.0, 1.0)
+
+        bucket = "low"
+        if impact >= 0.66:
+            bucket = "high"
+        elif impact >= 0.33:
+            bucket = "mid"
+
+        bucket_entry = matrix[str(kairos_level)][bucket]
+        new_count = bucket_entry["count"] + 1
+        bucket_entry["avg_impact"] = (
+            (bucket_entry["avg_impact"] * bucket_entry["count"] + impact) / new_count
+        )
+        bucket_entry["count"] = new_count
+
+        events.append(
+            {
+                "timestamp": _extract_timestamp(record),
+                "kairos_level": kairos_level,
+                "impact": round(impact, 4),
+                "agent_tags": _extract_agent_tags(record),
+                "lineage": _extract_first(record, ("lineage",), ("metadata", "lineage")),
+            }
+        )
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "source_log": str(source),
+        "records": len(events),
+        "skipped_records": skipped,
+        "matrix": matrix,
+        "events": events,
+    }
+
+
+def _build_cohesion_dashboard(records: List[Dict[str, Any]], source: Path) -> Dict[str, Any]:
+    latency_values: List[float] = []
+    replay_values: List[int] = []
+    love_values: List[float] = []
+    coherence_values: List[float] = []
+
+    for record in records:
+        latency = _parse_float(
+            _extract_first(
+                record,
+                ("latency_ms",),
+                ("metrics", "latency_ms"),
+                ("observability", "latency_ms"),
+            )
+        )
+        if latency is not None:
+            latency_values.append(latency)
+
+        retries = _parse_int(
+            _extract_first(
+                record,
+                ("retries",),
+                ("metrics", "retries"),
+                ("observability", "retries"),
+            )
+        )
+        if retries is not None:
+            replay_values.append(retries)
+
+        love_delta = _parse_float(
+            _extract_first(
+                record,
+                ("love_resonance_delta",),
+                ("metrics", "love_resonance_delta"),
+                ("telemetry", "love_resonance_delta"),
+            )
+        )
+        if love_delta is not None:
+            love_values.append(love_delta)
+
+        coherence = _parse_float(
+            _extract_first(
+                record,
+                ("trinity_coherence",),
+                ("system_state", "temporal_coherence"),
+                ("system_state", "conceptual_clarity"),
+                ("state_vectors", "temporal_coherence"),
+            )
+        )
+        if coherence is not None:
+            coherence_values.append(coherence)
+
+    def average(values: List[float]) -> float:
+        if not values:
+            return 0.0
+        return sum(values) / len(values)
+
+    avg_latency = average(latency_values)
+    avg_replay = average([float(v) for v in replay_values])
+    avg_love = average(love_values)
+    avg_coherence = average(coherence_values)
+
+    cohesion_index = max(
+        0.0,
+        min(
+            1.0,
+            (1.0 - min(avg_latency / 10000.0, 0.8))
+            - min(avg_replay / 10.0, 0.4)
+            + min(avg_love / 5.0, 0.4)
+            + (avg_coherence - 0.5),
+        ),
+    )
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "source_log": str(source),
+        "samples": len(records),
+        "metrics": {
+            "average_latency_ms": round(avg_latency, 2),
+            "average_replay_count": round(avg_replay, 2),
+            "average_love_resonance_delta": round(avg_love, 3),
+            "average_trinity_coherence": round(avg_coherence, 3),
+            "cohesion_index": round(cohesion_index, 3),
+        },
+    }
+
+
+def _build_timeline_map(records: List[Dict[str, Any]], source: Path) -> Dict[str, Any]:
+    events: List[Dict[str, Any]] = []
+    for record in records:
+        timestamp = _extract_timestamp(record)
+        lineage = _extract_first(record, ("lineage",), ("metadata", "lineage"))
+        location = _extract_first(
+            record,
+            ("location",),
+            ("geo",),
+            ("metadata", "location"),
+        )
+
+        lat: Optional[float] = None
+        lon: Optional[float] = None
+        if isinstance(location, dict):
+            lat = _parse_float(location.get("lat"))
+            lon = _parse_float(location.get("lon"))
+        elif isinstance(location, (list, tuple)) and len(location) == 2:
+            lat = _parse_float(location[0])
+            lon = _parse_float(location[1])
+
+        event: Dict[str, Any] = {
+            "timestamp": timestamp,
+            "kairos_level": _parse_int(
+                _extract_first(
+                    record,
+                    ("kairos_level",),
+                    ("metrics", "kairos_level"),
+                    ("components", "kairos", "level"),
+                )
+            ),
+            "lineage": lineage,
+            "impact": _parse_float(
+                _extract_first(
+                    record,
+                    ("impact",),
+                    ("metrics", "impact"),
+                    ("components", "kairos", "impact"),
+                )
+            ),
+            "agents": _extract_agent_tags(record),
+        }
+
+        if lat is not None and lon is not None:
+            event["coordinates"] = {"lat": lat, "lon": lon}
+
+        events.append(event)
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "source_log": str(source),
+        "events": events,
+    }
+
+
+def _write_json(path: Path, payload: Dict[str, Any]) -> None:
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def export_dashboards(log_path: Path, output_dir: Path) -> DashboardArtifacts:
+    records = _load_log_records(log_path)
+    _ensure_output_dir(output_dir)
+
+    compass = _build_kairos_compass(records, log_path)
+    cohesion = _build_cohesion_dashboard(records, log_path)
+    timeline_map = _build_timeline_map(records, log_path)
+
+    _write_json(output_dir / "kairos_compass.json", compass)
+    _write_json(output_dir / "cohesion_dashboard.json", cohesion)
+    _write_json(output_dir / "timeline_map.json", timeline_map)
+
+    return DashboardArtifacts(compass, cohesion, timeline_map)
+
+
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Export EvoDashboard visualisations from Trinity metrics logs.")
+    parser.add_argument(
+        "--log",
+        type=Path,
+        default=DEFAULT_LOG_PATH,
+        help="Path to logs/trinity_metrics.log (default: logs/trinity_metrics.log)",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=DEFAULT_OUTPUT_DIR,
+        help="Output directory for dashboard payloads (default: EvoDashboard)",
+    )
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = _parse_args()
+    artifacts = export_dashboards(args.log, args.output)
+    summary = {
+        "kairos_compass_records": artifacts.kairos_compass["records"],
+        "cohesion_samples": artifacts.cohesion_dashboard["samples"],
+        "timeline_events": len(artifacts.timeline_map["events"]),
+    }
+    print(json.dumps(summary, indent=2, ensure_ascii=False))
+
+
+if __name__ == "__main__":  # pragma: no cover - CLI entrypoint
+    main()

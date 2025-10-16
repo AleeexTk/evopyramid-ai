@@ -196,6 +196,26 @@ lineages:
       - "Chronos"
       - "Logos"
 
+  - id: "kairos_logos_dashboard_export"
+    name: "Kairos ↔ Logos Dashboard Export"
+    tier: "Cognitive"
+    parent: "scripts"
+    anchor: "scripts/export_dashboards.py"
+    description: |
+      Automated exporter that translates Trinity telemetry and KairosEvents into
+      EvoDashboard artifacts (Kairos Compass, Cohesion Dashboard, Timeline Map),
+      ensuring visual observability is synchronised with the CI cadence.
+    doc_links:
+      - "docs/analysis/EvoPyramid_Architecture_Layers_of_Meaning_2025Q1.md"
+      - "docs/integration/EvoSync_Notion_Directive.md"
+    sync_references:
+      - "EVO_SYNC_MANIFEST.yaml::directives[0].evo_dashboard_exports"
+      - ".github/workflows/ci.yml::Kairos Dashboard Export"
+    status: "active"
+    tags:
+      - "Kairos"
+      - "Logos"
+
 notes:
   - "Every new subsystem must declare lineage here to avoid architectural orphans."
   - "Tags map layers of the Chronos/Kairos/Logos triad for rapid orientation."
