@@ -56,6 +56,10 @@ jobs:
             echo "No tests found"
           fi
 
+      - name: Trinity observer self-check
+        run: |
+          python -m apps.core.observers.trinity_observer --check --duration 5
+
       - name: Write Codex feedback log
         run: |
           mkdir -p logs
@@ -80,7 +84,19 @@ jobs:
           labels: codex, autosync
 
       - name: Upload logs artifact
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: codex-logs
           path: logs/codex_feedback.log
+
+      - name: Upload Trinity reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: trinity-observer-reports
+          path: |
+            EvoMemory/TrinitySnapshots
+            EvoMemory/PeakAnalyses
+            EvoMemory/Stabilization
+          if-no-files-found: ignore

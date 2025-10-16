@@ -9,7 +9,7 @@ import pytest
 import pytest_asyncio
 
 httpx = pytest.importorskip("httpx")
-from httpx import AsyncClient  # type: ignore  # noqa: E402
+from httpx import ASGITransport, AsyncClient  # type: ignore  # noqa: E402
 
 from apps.api.main import app
 from apps.core.memory.memory_manager import Memory
@@ -98,7 +98,8 @@ def stub_quantum(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
 async def async_client() -> AsyncIterator[AsyncClient]:
     """Provide an AsyncClient bound to the FastAPI app."""
 
-    async with AsyncClient(app=app, base_url="http://testserver") as client:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
         yield client
 
 

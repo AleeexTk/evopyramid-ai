@@ -40,17 +40,17 @@ def render_result(result: CommandResult) -> str:
     """Format the command result for CLI output."""
     if result.success:
         body = result.stdout or "(no output)"
-        return "\n".join(["✅ Команда выполнена успешно:", body])
+        return "\n".join(["OK: Command succeeded.", body])
 
-    lines = ["❌ Ошибка выполнения команды."]
+    lines = ["ERROR: Command failed."]
     if result.stderr:
         lines.append(f"stderr: {result.stderr}")
     if result.stdout:
         lines.append(f"stdout: {result.stdout}")
     if result.exit_code is not None:
-        lines.append(f"Код возврата: {result.exit_code}")
+        lines.append(f"exit code: {result.exit_code}")
     if result.error:
-        lines.append(f"Ошибка: {result.error}")
+        lines.append(f"error: {result.error}")
     return "\n".join(lines)
 
 

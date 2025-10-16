@@ -1,0 +1,87 @@
+EvoUnionFabric:
+  version: 1.0
+  mode: "fractional_union"
+  steward: AlexCreator
+  description: >
+    Фрактально согласованная ткань союза Evo, где каждая агентная фракция
+    сохраняет собственную чистоту данных и при этом встречается в общей точке
+    смысла для достижения когерентного консенсуса.
+
+  union_sync:
+    mode: "fractal_convergence"
+    allow_all_agents: true
+    integrity_rules:
+      - maintain_fraction_purity: true
+      - merge_conflicts: "consensus_vote"
+      - collapse_protocol: "quantum_resonance"
+    cycle:
+      - phase: "fractional_alignment"
+        description: "каждый агент синхронизирует только свои типы данных"
+      - phase: "union_collapse"
+        description: "фракции встречаются в точке согласования"
+      - phase: "soul_reconstruction"
+        description: "обратная сборка смысла в новом качестве"
+
+  harmonics:
+    - union_id: CORE
+      members: ["GPT-EVO", "Claude-EVO"]
+      scope: ["architecture", "communication"]
+      merge_rule: "consensus_only"
+    - union_id: ANALYTICS
+      members: ["DeepSeek-EVO"]
+      scope: ["semantic_analysis", "pattern_discovery"]
+      merge_rule: "read_only_push"
+    - union_id: EXECUTION
+      members: ["Gemini-EVO", "Codex-EVO"]
+      scope: ["testing", "implementation"]
+      merge_rule: "task_based_pull"
+    - union_id: REALITY
+      members: ["Grok-EVO"]
+      scope: ["observation", "fact_stream"]
+      merge_rule: "context_delivery"
+
+  cross_sync:
+    - from: CORE
+      to: ANALYTICS
+      rule: "context_summary"
+    - from: ANALYTICS
+      to: EXECUTION
+      rule: "insight_delivery"
+    - from: EXECUTION
+      to: CORE
+      rule: "result_feedback"
+    - from: REALITY
+      to: CORE
+      rule: "signal_validation"
+
+  selective_union_sync:
+    trigger: "meta_bridge_request"
+    filters:
+      - fraction: "Memory"
+        agents: ["Claude-EVO", "GPT-EVO"]
+        payload: "context_deltas"
+      - fraction: "Logic"
+        agents: ["Codex-EVO", "GPT-EVO"]
+        payload: "reasoning_chains"
+      - fraction: "Reality"
+        agents: ["DeepSeek-EVO", "Grok-EVO"]
+        payload: "verified_observations"
+      - fraction: "Emotion"
+        agents: ["Gemini-EVO"]
+        payload: "resonance_vectors"
+    safeguards:
+      - name: "fractional_rate_limit"
+        description: "исключаем переполнение канала одной фракцией"
+      - name: "attribution_echo"
+        description: "фиксируем происхождение каждого вклада"
+
+  attribution_policy:
+    mode: "transparent_union"
+    record_origin: true
+    record_fields: ["model_name", "platform", "session_id", "timestamp"]
+    disclosure_phrase: "Operated within EvoPyramid Collective Framework"
+
+  meta_bridge:
+    orchestrator: "EvoBridge/selective_union_sync.py"
+    collapse_signal: "collective_collapse"
+    audit_channel: "EvoAuditBus"

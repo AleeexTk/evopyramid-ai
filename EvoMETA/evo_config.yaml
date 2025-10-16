@@ -1,14 +1,3 @@
-logging:
-  base_dir: "~/Documents/EVO"
-  level: INFO
-memory:
-  auto_delete_threshold: 45
-server:
-  host: 0.0.0.0
-  port: 5002
-  debug: false
-  use_reloader: false
-
 ritual_commands:
   pear_init:
     description: "Инициализация PEAR ядра"
@@ -22,21 +11,8 @@ ritual_commands:
     description: "Синхронизация метапамяти"
     command: "python3 EvoMETA/evo_sync.py"
 
-  nexus_discuss:
-    description: "Обсуждение предложения через Nexus + Consensus"
-    command: "python3 apps/cli/evo_nexus_cli.py --proposal 'Рефракция ролей для новой сессии' --session PEAR_A24"
-
-  meta_agi:
-    description: "Ролевое обсуждение AGI (CollectiveMindV1)"
-    command: "python3 apps/cli/collective_mind_cli.py \"Разработай архитектуру модуля интеграции AGI в EvoPyramid\""
-
-  show_flow:
-    description: "Показать последние метрики потока (tail JSONL)"
-    command: "bash -lc 'tail -n 20 $( [ -z \"$EVODIR\" ] && echo ./local_EVO || echo $EVODIR )/logs/collective_flow.jsonl || true'"
-
 integration_modules:
   - Core
   - EvoAGI
   - Evo_Chaos
   - Evo_EcoSystem
-  - EvoNexusBridge

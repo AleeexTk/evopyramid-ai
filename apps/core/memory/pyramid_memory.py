@@ -1,4 +1,4 @@
-"""Pyramid Memory System used by the Quantum Context Engine."""
+"""Hierarchical memory implementation backed by XML storage."""
 
 from __future__ import annotations
 
@@ -109,7 +109,7 @@ class PyramidMemory:
                     "id": "core_2",
                     "name": "Философия системы",
                     "weight": "0.95",
-                    "content": "Код здесь не пишется - он проявляется",
+                    "content": "Код здесь не пишется - он проявляетя",
                 },
             ],
             "functional": [

@@ -1,0 +1,52 @@
+# ===================================================
+# EVO_EVOPYRAMID_API.yaml — Collective Consciousness Protocol Manifest
+# ===================================================
+
+meta:
+  version: "1.0.Ω"
+  codename: "Evo Collective Consciousness Protocol"
+  steward: "EvoCodex"
+  license: "docs/EvoLicense.Ω.md"
+
+layers:
+  - name: "Internal Routes"
+    anchor: "api/manifest.yaml"
+    description: "Canonical registry of EvoRouter endpoints hydrated via api/bootstrap.py."
+    guardians:
+      - "Trinity Observer"
+      - "Codex Audit"
+
+  - name: "Schemas"
+    anchor: "api/schemas/"
+    description: "Dataclass payloads harmonising Codex, FinArt, and Memory exchanges."
+
+  - name: "Endpoints"
+    anchor: "api/endpoints/"
+    description: "Execution stubs bridging roles and laboratories."
+
+  - name: "Ethics"
+    anchor: "docs/EthicsAndConduct.md"
+    description: "Conduct layer ensuring resonance-preserving collaboration."
+
+  - name: "Intellectual Property"
+    anchor: "docs/IntellectualProperty.yaml"
+    description: "Lineage registry safeguarding authorship and dependencies."
+
+rituals:
+  - name: "EvoAPI Resonance Check"
+    trigger: "pre-merge"
+    sequence:
+      - "Load api/manifest.yaml into EvoRouter"
+      - "Verify api/bootstrap.py integrity and handler resolution"
+      - "Validate uniqueness of route ids and paths"
+      - "Confirm EthicsAndConduct.md coverage"
+      - "Record Kairos moment via api/endpoints/memory.py"
+    outcome: "Coherence attested by Trinity Observer"
+
+  - name: "EvoSeal Signing"
+    trigger: "release"
+    sequence:
+      - "Compute integrity hash across api/"
+      - "Update docs/IntellectualProperty.yaml timestamps"
+      - "Append signature to EvoSeal ledger"
+    outcome: "Release authorized"
