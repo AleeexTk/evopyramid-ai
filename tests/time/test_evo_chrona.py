@@ -1,14 +1,22 @@
+"""Tests for the EvoChrona modules."""
+
+from __future__ import annotations
+
 import asyncio
 import contextlib
+from datetime import UTC, datetime
+from typing import Any, Mapping
 
-from apps.core.time.evo_chrona import chrona, TemporalState
+import pytest
+
+from apps.core.time.evo_chrona import EvoChrona, TemporalState, chrona, sanitize_moment_key
 
 
-def test_chrona_pulse_smoke():
-    async def runner():
+def test_chrona_pulse_smoke() -> None:
+    async def runner() -> None:
         hits = {"n": 0}
 
-        async def handler(_pulse):
+        async def handler(_pulse: Mapping[str, Any]) -> None:
             hits["n"] += 1
 
         original_tempo = chrona.tempo
@@ -26,27 +34,23 @@ def test_chrona_pulse_smoke():
     asyncio.run(runner())
 
 
-def test_chrona_state_adjust():
+def test_chrona_state_adjust() -> None:
     chrona.adjust_tempo(1.5)
     assert 0.1 <= chrona.tempo <= 3.0
     chrona.change_temporal_state(TemporalState.REFLECTIVE)
     assert chrona.temporal_state == TemporalState.REFLECTIVE
 
-import pytest
-
-from apps.core.time import EvoChrona
-
 
 @pytest.mark.asyncio
 async def test_tempo_adjusts_pulse_rate() -> None:
-    chrona = EvoChrona(base_interval=0.12, tempo=1.0)
-    await chrona.start()
+    chrona_obj = EvoChrona(base_interval=0.12, tempo=1.0)
+    await chrona_obj.start()
 
     async def measure(window: float, tempo: float) -> int:
-        chrona.tempo = tempo
-        before = chrona.pulse_count
+        chrona_obj.tempo = tempo
+        before = chrona_obj.pulse_count
         await asyncio.sleep(window)
-        return chrona.pulse_count - before
+        return chrona_obj.pulse_count - before
 
     try:
         window = 0.6
@@ -54,19 +58,9 @@ async def test_tempo_adjusts_pulse_rate() -> None:
         normal = await measure(window, 1.0)
         fast = await measure(window, 3.0)
     finally:
-        await chrona.stop()
+        await chrona_obj.stop()
 
     assert slow < normal < fast
-"""Tests for the EvoChrona Kairos moment persistence layer."""
-
-from __future__ import annotations
-
-from datetime import UTC, datetime
-from typing import Any, Mapping
-
-import pytest
-
-from apps.core.time.evo_chrona import EvoChrona, sanitize_moment_key
 
 
 class DummyMemory:
@@ -87,8 +81,8 @@ class DummyMemory:
     ],
 )
 def test_kairos_moment_filename_is_windows_safe(timestamp: datetime) -> None:
-    chrona = EvoChrona(memory=DummyMemory())
-    safe_key = chrona._save_kairos_moment(timestamp, {"event": "test"})
+    chrona_obj = EvoChrona(memory=DummyMemory())
+    safe_key = chrona_obj._save_kairos_moment(timestamp, {"event": "test"})
 
     forbidden_characters = '<>:"/\\|?*'
     assert all(char not in safe_key for char in forbidden_characters)

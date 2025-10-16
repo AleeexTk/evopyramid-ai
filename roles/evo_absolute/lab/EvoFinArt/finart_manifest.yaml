@@ -1,0 +1,43 @@
+# ============================================
+# EvoFinArt Laboratory Manifest (Embedded)
+# --------------------------------------------
+# Mirrors the external EvoFinArt repository to maintain
+# awareness inside EvoPyramid.
+# ============================================
+
+project:
+  name: "EvoFinArt"
+  repository: "https://github.com/AleeexTk/EvoFinArt"
+  description: >-
+    Visual Studio laboratory exploring algorithmic art generation,
+    MetaTrader 5 signal experimentation, and financial pattern synthesis.
+  maintainer: "EvoAbsolute Ω"
+
+laboratory:
+  environment:
+    type: "visual_studio"
+    adapters:
+      - "VisualEnvAdapter"
+    bridge: "EvoLinkBridge"
+  telemetry:
+    sync_log: "logs/evo_absolute/sync.log"
+    bridge_log: "logs/evo_absolute/finart_bridge.log"
+    reflection: "logs/evo_absolute/reflection.json"
+
+modules:
+  - name: "signals_engine.py"
+    purpose: "Generate experimental trading signals informed by art metrics."
+  - name: "mt5_bridge.py"
+    purpose: "Connect EvoFinArt strategies with the MetaTrader 5 runtime."
+  - name: "backtester.py"
+    purpose: "Run local simulations of EvoFinArt strategies against datasets."
+  - name: "profiler.py"
+    purpose: "Profile runtime performance and resource usage for lab runs."
+
+synchronisation:
+  cadence: "manual"
+  triggers:
+    - "Visual Studio build"
+    - "FinArt dataset refresh"
+    - "Trinity Observer sync request"
+

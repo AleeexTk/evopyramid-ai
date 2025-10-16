@@ -1,7 +1,10 @@
-import os
-import json
+"""Asynchronous in-memory store used by EvoPyramid tests and services."""
+
+from __future__ import annotations
+
 import asyncio
-from typing import Dict, Any
+import os
+from typing import Any, Dict, List, Optional
 
 
 class _ProjectMemory:
@@ -14,33 +17,19 @@ class _ProjectMemory:
 
 
 class Memory:
-    @staticmethod
-    def for_project(project: str) -> _ProjectMemory:
-        return _ProjectMemory(base=os.path.join("EvoMemory", project))
-
-    @staticmethod
-    async def save_state(key: str, data: Dict[str, Any], category: str = "general") -> None:
-        path = os.path.join("EvoMemory", category)
-        os.makedirs(path, exist_ok=True)
-        file_path = os.path.join(path, f"{key}.json")
-        with open(file_path, "w", encoding="utf-8") as handle:
-            json.dump(data, handle, ensure_ascii=False, indent=2)
-"""Простейший асинхронный Memory Manager для API и бенчмарков."""
-
-from __future__ import annotations
-
-import asyncio
-from typing import Any, Dict, List, Optional
-
-
-class Memory:
-    """In-memory key/value стор с примитивной асинхронной моделью."""
+    """In-memory key/value store with a lightweight async interface."""
 
     _store: Dict[str, Any] = {
         "api_keys": ["dev-api-key"],
         "self_evolving_skills": {},
     }
     _lock = asyncio.Lock()
+
+
+    @staticmethod
+    def for_project(project: str) -> _ProjectMemory:
+        base = os.path.join("EvoMemory", project)
+        return _ProjectMemory(base=base)
 
     @classmethod
     async def get(cls, key: str, default: Optional[Any] = None) -> Any:

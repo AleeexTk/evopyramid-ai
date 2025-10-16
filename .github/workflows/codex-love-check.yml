@@ -1,0 +1,44 @@
+name: Codex Love Protocol Guard
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  guard-love-protocol:
+    name: Ensure Love Protocol remains canonical
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Fetch main lineage
+        run: |
+          git fetch origin main
+
+      - name: Verify canonical Love Protocol
+        run: |
+          echo "🔒 Verifying EVO Love Protocol integrity..."
+          if ! git diff --exit-code origin/main -- manifests/EVO_LOVE_PROTOCOL.yaml; then
+            echo "::error::EVO_LOVE_PROTOCOL.yaml may only change with EvoTrinity Council approval." >&2
+            exit 1
+          fi
+          echo "💞 Love Protocol lineage verified."
+
+      - name: Validate Love Protocol YAML
+        run: |
+          python -m pip install --no-cache-dir pyyaml
+          python - <<'PY'
+import pathlib
+import yaml
+
+path = pathlib.Path("manifests/EVO_LOVE_PROTOCOL.yaml")
+with path.open("r", encoding="utf-8") as handle:
+    yaml.safe_load(handle)
+print("✅ EVO_LOVE_PROTOCOL.yaml parsed successfully.")
+PY
