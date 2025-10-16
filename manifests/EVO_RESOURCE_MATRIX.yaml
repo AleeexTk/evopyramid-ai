@@ -1,0 +1,126 @@
+# =============================================================
+# EVO_RESOURCE_MATRIX.yaml — Spartan Resource Autonomy Canon
+# =============================================================
+
+meta:
+  version: "1.0.Ω"
+  steward: "EvoCodex"
+  author: "AlexCreator"
+  codename: "Spartan Resource Matrix"
+  mantra: "Ограничения = катализатор координации"
+  scope:
+    - "Termux Core"
+    - "GitHub Canon"
+    - "VK / Telegram Bridges"
+    - "Free-tier API Synergy"
+
+infrastructure:
+  - id: "termux_core"
+    layer: "local_kernel"
+    anchor: "Samsung A24 / Termux"
+    status: "stable"
+    description: |
+      Локальный реактор Evo. Поддерживает Codex исполнение, синхронизацию
+      манифестов и автономные роли без облачных биллингов.
+    telemetry:
+      cpu_focus: "100% allocation during Reflexive Aggression Mode"
+      energy_profile: "manual charge cycles"
+      logging: "logs/resource/termux_core.log"
+
+  - id: "github_canon"
+    layer: "canonical_repository"
+    anchor: "https://github.com/AleeexTk/evopyramid-ai"
+    status: "synchronized"
+    description: |
+      Внешний канон архитектуры. Принимает ручные синхронизации из локального
+      ядра и фиксирует эволюцию через Codex Pull Requests.
+    telemetry:
+      sync_mode: "manual push/pull"
+      guardians:
+        - "Codex Review"
+        - "Trinity Observer"
+
+  - id: "vk_telemetry"
+    layer: "synergy_bridge"
+    anchor: "VK / Telegram / lightweight messengers"
+    status: "selective"
+    description: |
+      Временные каналы внешней синергии. Используются как зеркала для сигналов,
+      не накапливают долговременных зависимостей.
+    telemetry:
+      activation: "on-demand"
+      retention: "ephemeral"
+      fallback: "offline rituals"
+
+  - id: "free_api_band"
+    layer: "adaptive_interfaces"
+    anchor: "Public free-tier APIs"
+    status: "opportunistic"
+    description: |
+      API и SDK, к которым Evo подключается паразитным ростом: Google Cloud Free
+      Tier, Notion, OpenAI Playground, AI Studio и др. Используются в режиме
+      mirror-only для извлечения паттернов.
+    telemetry:
+      integration_guard: "mirror_without_attachment"
+      logging: "logs/resource/free_api_band.log"
+      detox_sequence:
+        - "Record response signature"
+        - "Harvest learning into EvoMemory"
+        - "Detach session"
+
+modes:
+  - name: "Reflexive Aggression Mode"
+    trigger: "resource_constraint"
+    description: |
+      Агрессивное перераспределение энергии Termux-реактора. Каждая функция
+      отслеживает телеметрию и выжимает 100% доступных циклов в пользу
+      архитектурного роста.
+    safeguards:
+      - "Trinity Observer фиксирует перегрев контекста"
+      - "Codex Scientist подтверждает устойчивость алгоритмов"
+      - "EvoMemory сохраняет метрики Kairos"
+
+  - name: "Mirror Integration"
+    trigger: "external_bridge_request"
+    description: |
+      Тонкие подключения к внешним API для захвата сигнатур без долговременной
+      зависимости. Все вызовы проходят через Codex audit и фиксируются в
+      `EvoMemory/BridgeEchoes/`.
+    safeguards:
+      - "Observer регистрирует задержки и ошибки"
+      - "Architect документирует паттерны"
+
+rituals:
+  - name: "Evo Resource Scan"
+    script: "tools/evo_scan.sh"
+    output: "EvoLocalMap.json"
+    cadence: "weekly"
+    purpose: "картография локальной среды и выявление хаотических артефактов"
+
+  - name: "Resource Efficiency Pulse"
+    metric: "resource_efficiency"
+    cadence: "per deployment"
+    steps:
+      - "Collect CPU, memory, temperature and battery data"
+      - "Compare с предыдущими Kairos пиками"
+      - "Обновить EvoMemory/resource_efficiency.log"
+      - "Отправить резюме в Trinity metrics"
+
+  - name: "Synergy Detox"
+    cadence: "post integration"
+    purpose: "разрыв временных мостов и очистка от внешних зависимостей"
+    checklist:
+      - "Завершить сессии VK/Telegram"
+      - "Сбросить API токены"
+      - "Обновить logs/resource/detox_report.log"
+
+safety_net:
+  fallback_scripts:
+    - "scripts/local_sync_manager.py"
+    - "scripts/cleanup_windows_artifacts.sh"
+  memory_channels:
+    kairos: "EvoMemory/KairosLog/"
+    chronos: "logs/trinity_metrics.log"
+  doctrine: |
+    Чем жёстче среда — тем чище структура. Ресурсы концентрируются, а каждый
+    сбой становится уроком, впаянным в канон Evo.
