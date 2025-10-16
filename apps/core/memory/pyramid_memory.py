@@ -1,4 +1,4 @@
-"""Pyramid Memory System used by the Quantum Context Engine."""
+"""Hierarchical memory implementation backed by XML storage."""
 
 from __future__ import annotations
 
@@ -7,6 +7,8 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+
+from apps.core.context.models import MemoryResult
 
 
 @dataclass
@@ -107,7 +109,7 @@ class PyramidMemory:
                     "id": "core_2",
                     "name": "Философия системы",
                     "weight": "0.95",
-                    "content": "Код здесь не пишется - он проявляется",
+                    "content": "Код здесь не пишется - он проявляетя",
                 },
             ],
             "functional": [
@@ -250,7 +252,7 @@ class EnhancedDigitalSoulLedger:
         if (self.auto_reload or force) and hasattr(self.memory, "reload_from_disk"):
             self.memory.reload_from_disk()
 
-    async def find_related_fragments(self, query: str, threshold: float = 0.85) -> Dict[str, Any]:
+    async def find_related_fragments(self, query: str, threshold: float = 0.85) -> MemoryResult:
         if self.auto_reload:
             self.refresh_memory()
         fragments = self.memory.find_relevant_fragments(query, threshold)
@@ -263,12 +265,12 @@ class EnhancedDigitalSoulLedger:
             }
             for fragment in fragments
         ]
-        return {
-            "has_strong_links": bool(fragments),
-            "fragments": [fragment.id for fragment in fragments],
-            "relevance_score": max((fragment.relevance_score for fragment in fragments), default=0.0),
-            "details": details,
-        }
+        return MemoryResult(
+            has_strong_links=bool(fragments),
+            fragments=[fragment.id for fragment in fragments],
+            relevance_score=max((fragment.relevance_score for fragment in fragments), default=0.0),
+            details=details,
+        )
 
 
 async def demo_pyramid_memory() -> None:

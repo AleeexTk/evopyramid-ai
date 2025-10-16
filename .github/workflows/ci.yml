@@ -37,3 +37,14 @@ jobs:
           PYTHONUNBUFFERED: "1"
         run: |
           pytest -q || (echo "::warning ::pytest reported failures"; exit 1)
+
+      - name: Kairos Dashboard Export
+        run: |
+          python scripts/export_dashboards.py --log logs/trinity_metrics.log --output EvoDashboard
+          test -f EvoDashboard/kairos_compass.json
+          test -f EvoDashboard/cohesion_dashboard.json
+          test -f EvoDashboard/timeline_map.json
+
+      - name: EvoAbsolute adapter probe
+        run: |
+          python -m roles.evo_absolute.lab.visual_env_adapter ci

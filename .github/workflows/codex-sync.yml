@@ -1,0 +1,102 @@
+name: Codex Continuous Evolution
+
+on:
+  push:
+    branches: [ codex-review ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *"  # каждые 6 часов (опц.)
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  codex_integration:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge main → codex-review (fast-forward if possible)
+        run: |
+          git config user.name "codex-bot"
+          git config user.email "codex-bot@users.noreply.github.com"
+          git fetch origin main
+          git checkout codex-review
+          git merge --ff-only origin/main || true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps (best-effort)
+        run: |
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements_context.txt ]; then pip install -r requirements_context.txt; fi
+          pip install pytest || true
+          pip install ruff || true
+
+      - name: Static checks
+        run: |
+          if command -v ruff >/dev/null 2>&1; then ruff --version && ruff check . || true; fi
+
+      - name: Run tests
+        id: tests
+        run: |
+          if compgen -G "tests/**/*.py" > /dev/null; then
+            pytest -q || echo "::warning::Tests failed (non-blocking for PR creation)"
+          else
+            echo "No tests found"
+          fi
+
+      - name: Trinity observer self-check
+        run: |
+          python -m apps.core.observers.trinity_observer --check --duration 5
+
+      - name: Write Codex feedback log
+        run: |
+          mkdir -p logs
+          {
+            echo "---- $(date -u +'%Y-%m-%dT%H:%M:%SZ') ----"
+            echo "branch=codex-review"
+            echo "tests_status=${{ steps.tests.outcome }}"
+            echo "sync_note=codex-sync pipeline executed"
+          } >> logs/codex_feedback.log
+
+      - name: Create/Update PR → main
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "Codex sync: propagate changes from codex-review"
+          title: "Codex Sync: codex-review → main"
+          body: |
+            Automated sync from `codex-review` to `main`.
+            - Lint/tests executed in CI
+            - See `logs/codex_feedback.log` for last feedback lines
+          branch: codex-sync/auto-pr
+          base: main
+          labels: codex, autosync
+
+      - name: Upload logs artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-logs
+          path: logs/codex_feedback.log
+
+      - name: Upload Trinity reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: trinity-observer-reports
+          path: |
+            EvoMemory/TrinitySnapshots
+            EvoMemory/PeakAnalyses
+            EvoMemory/Stabilization
+          if-no-files-found: ignore

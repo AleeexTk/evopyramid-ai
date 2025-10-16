@@ -3,91 +3,121 @@
 from __future__ import annotations
 
 import asyncio
-import random
-from dataclasses import asdict, dataclass
-from typing import Any, Dict, List
+import hashlib
+import re
+from typing import Any, Dict, Iterable, List, Optional
+
+from apps.core.context.models import (
+    AffectResult,
+    IntentResult,
+    MemoryLedgerProtocol,
+    MemoryResult,
+)
 
 
-@dataclass
-class IntentResult:
-    """Intent detection result."""
-
-    urgency: float
-    type: str
-    confidence: float
-
-    def to_dict(self) -> Dict[str, float | str]:
-        """Convert the dataclass to a dictionary."""
-        return asdict(self)
+# ---------------------------------------------------------------------------
+# Helper utilities
+# ---------------------------------------------------------------------------
 
 
-@dataclass
-class AffectResult:
-    """Affective analysis result."""
+def _tokenize(query: str) -> List[str]:
+    """Tokenise the query into lowercase word-like fragments."""
 
-    soul_resonance: float
-    emotion: str
-    intensity: float
-
-    def to_dict(self) -> Dict[str, float | str]:
-        """Convert the dataclass to a dictionary."""
-        return asdict(self)
+    return re.findall(r"[\w-]+", query.lower())
 
 
-@dataclass
-class MemoryResult:
-    """Memory lookup result."""
+def _score_keywords(tokens: Iterable[str], keywords: Iterable[str]) -> float:
+    """Compute a simple matching score between tokens and keywords."""
 
-    has_strong_links: bool
-    fragments: List[str]
-    relevance_score: float
+    token_list = list(tokens)
+    if not token_list:
+        return 0.0
+    keywords_set = set(keywords)
+    matches = sum(1 for token in token_list if token in keywords_set)
+    return matches / len(token_list)
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert the dataclass to a dictionary."""
-        return asdict(self)
+
+# ---------------------------------------------------------------------------
+# Lightweight heuristic models
+# ---------------------------------------------------------------------------
 
 
 class IntentModel:
     """Intent classifier used by the analyzer."""
 
-    _INTENT_TYPES = [
-        "technical",
-        "philosophical",
-        "urgent",
-        "casual",
-        "creative",
-    ]
+    _INTENT_KEYWORDS = {
+        "urgent": {"срочно", "urgent", "немедленно", "emergency"},
+        "technical": {
+            "архитектура",
+            "architecture",
+            "code",
+            "ошибка",
+            "bug",
+            "system",
+        },
+        "philosophical": {"смысл", "meaning", "why", "philosophy", "духов", "жизнь"},
+        "creative": {"идея", "concept", "imagine", "творч", "design"},
+        "casual": {"привет", "hello", "как", "напомни", "tell"},
+    }
 
     async def predict(self, query: str) -> IntentResult:
-        """Return a pseudo-random intent prediction for the query."""
-        del query  # The current implementation is stochastic.
-        await asyncio.sleep(0.1)
-        urgency = random.uniform(0.1, 1.0)
-        intent_type = random.choice(self._INTENT_TYPES)
-        confidence = random.uniform(0.7, 0.95)
+        """Return a deterministic intent prediction derived from heuristics."""
+
+        tokens = _tokenize(query)
+        await asyncio.sleep(0.01)
+
+        urgency_score = _score_keywords(tokens, self._INTENT_KEYWORDS["urgent"])
+        punctuation_boost = min(query.count("!"), 3) * 0.12
+        urgency = min(1.0, 0.25 + 0.55 * urgency_score + punctuation_boost)
+
+        intent_type = "casual"
+        highest_score = 0.0
+        for label, keywords in self._INTENT_KEYWORDS.items():
+            score = _score_keywords(tokens, keywords)
+            if score > highest_score:
+                highest_score = score
+                intent_type = label
+
+        if urgency >= 0.75:
+            intent_type = "urgent"
+
+        confidence = min(0.95, 0.65 + highest_score * 0.3 + urgency_score * 0.2)
         return IntentResult(urgency=urgency, type=intent_type, confidence=confidence)
 
 
 class SoulAffectEncoder:
     """Encoder modelling affective signals."""
 
-    _EMOTIONS = [
-        "fear",
-        "melancholy",
-        "joy",
-        "calm",
-        "curiosity",
-        "determination",
-    ]
+    _EMOTION_KEYWORDS = {
+        "fear": {"страх", "fear", "опас", "паник"},
+        "melancholy": {"грусть", "melan", "lonely", "пустоту"},
+        "joy": {"рад", "joy", "успех", "happy"},
+        "calm": {"спокой", "calm", "мир"},
+        "curiosity": {"интерес", "curious", "почему", "как"},
+        "determination": {"фокус", "достиг", "решим", "намерен"},
+    }
 
     async def encode(self, query: str) -> AffectResult:
-        """Return a pseudo-random affective encoding for the query."""
-        del query
-        await asyncio.sleep(0.1)
+        """Return a deterministic affective encoding for the query."""
+
+        tokens = _tokenize(query)
+        await asyncio.sleep(0.01)
+
+        dominant_emotion = "calm"
+        dominant_score = 0.0
+        for emotion, keywords in self._EMOTION_KEYWORDS.items():
+            score = _score_keywords(tokens, keywords)
+            if score > dominant_score:
+                dominant_emotion = emotion
+                dominant_score = score
+
+        resonance = min(1.0, 0.35 + dominant_score * 0.55)
+        intensity = min(1.0, 0.45 + dominant_score * 0.4 + min(len(query) / 200, 0.15))
+
         return AffectResult(
-            soul_resonance=random.uniform(0.1, 1.0),
-            emotion=random.choice(self._EMOTIONS),
-            intensity=random.uniform(0.5, 0.95),
+            soul_resonance=resonance,
+            emotion=dominant_emotion,
+            intensity=intensity,
         )
 
 
@@ -97,19 +127,37 @@ class DigitalSoulLedger:
     async def find_related_fragments(
         self, query: str, threshold: float = 0.85
     ) -> MemoryResult:
-        """Return simulated fragments related to the query."""
-        del query, threshold
-        await asyncio.sleep(0.1)
-        has_links = random.random() > 0.3
+        """Return deterministic fragments related to the query."""
+
+        tokens = [token for token in _tokenize(query) if len(token) > 3]
+        await asyncio.sleep(0.01)
+        if not tokens:
+            return MemoryResult(has_strong_links=False, fragments=[], relevance_score=0.0)
+
+        scores: List[float] = []
         fragments: List[str] = []
-        if has_links:
-            fragments = [f"0x{random.getrandbits(128):032x}" for _ in range(random.randint(1, 3))]
-        relevance_score = random.uniform(0.6, 0.95) if has_links else 0.3
+        details: List[Dict[str, Any]] = []
+        for token in tokens[:3]:
+            digest = hashlib.sha1(token.encode("utf-8")).hexdigest()[:16]
+            fragments.append(f"0x{digest}")
+            score = min(1.0, 0.4 + len(token) / 20)
+            scores.append(score)
+            details.append({"token": token, "score": round(score, 3)})
+
+        average_score = sum(scores) / len(scores)
+        has_links = average_score >= max(0.2, threshold - 0.5)
+        relevance_score = min(1.0, average_score)
         return MemoryResult(
             has_strong_links=has_links,
             fragments=fragments,
             relevance_score=relevance_score,
+            details=details,
         )
+
+
+# ---------------------------------------------------------------------------
+# Pipeline primitives
+# ---------------------------------------------------------------------------
 
 
 class AGIEngine:
@@ -117,6 +165,7 @@ class AGIEngine:
 
     async def process(self, context: Dict[str, Any]) -> str:
         """Simulate AGI processing of the provided context."""
+
         await asyncio.sleep(0.2)
         urgency = context.get("intent", {}).get("urgency", 0.5)
         return f"AGI анализ завершен (срочность: {urgency:.2f})"
@@ -127,11 +176,13 @@ class SoulLedger:
 
     async def add_context(self, data: str) -> str:
         """Return an enriched context string."""
+
         await asyncio.sleep(0.15)
         return f"Духовный контекст: {data}"
 
     async def retrieve(self, context: Dict[str, Any]) -> str:
         """Retrieve soul context from the provided context."""
+
         await asyncio.sleep(0.15)
         emotion = context.get("affect", {}).get("emotion", "neutral")
         return f"Извлечение души для эмоции: {emotion}"
@@ -142,11 +193,13 @@ class RoleAdapter:
 
     async def wrap(self, agi_data: str, soul_data: str) -> str:
         """Wrap the AGI and soul outputs into a single response."""
+
         await asyncio.sleep(0.1)
         return f"🤖 {agi_data} | 🌌 {soul_data}"
 
     async def adapt(self, context: Dict[str, Any]) -> str:
         """Return a textual representation of role adaptation."""
+
         await asyncio.sleep(0.1)
         fragments = context.get("memory", {}).get("fragments", [])
         return f"Адаптация роли на основе {len(fragments)} фрагментов памяти"
@@ -157,19 +210,32 @@ soul_ledger = SoulLedger()
 role_adapter = RoleAdapter()
 
 
+# ---------------------------------------------------------------------------
+# Analyzer orchestration
+# ---------------------------------------------------------------------------
+
+
 class QuantumContextAnalyzer:
     """Main entry-point for context analysis inside EvoCodex."""
 
-    def __init__(self, query: str) -> None:
+    def __init__(
+        self,
+        query: str,
+        *,
+        intent_model: IntentModel | None = None,
+        soul_encoder: SoulAffectEncoder | None = None,
+        memory_ledger: Optional[MemoryLedgerProtocol] = None,
+    ) -> None:
         self.query = query
         self.context_layers: Dict[str, Any] = {}
         self.priority_path: str | None = None
-        self._intent_model = IntentModel()
-        self._soul_encoder = SoulAffectEncoder()
-        self._ledger = DigitalSoulLedger()
+        self._intent_model = intent_model or IntentModel()
+        self._soul_encoder = soul_encoder or SoulAffectEncoder()
+        self._ledger: MemoryLedgerProtocol = memory_ledger or DigitalSoulLedger()
 
     async def analyze(self) -> Dict[str, Any]:
         """Perform asynchronous context analysis across all layers."""
+
         intent_task = asyncio.create_task(self._intent_model.predict(self.query))
         affect_task = asyncio.create_task(self._soul_encoder.encode(self.query))
         memory_task = asyncio.create_task(self._ledger.find_related_fragments(self.query))
@@ -188,6 +254,7 @@ class QuantumContextAnalyzer:
 
     def _determine_priority_path(self) -> None:
         """Determine the processing priority path from the context."""
+
         urgency = self.context_layers.get("intent", {}).get("urgency", 0.0)
         soul_resonance = self.context_layers.get("affect", {}).get("soul_resonance", 0.0)
         has_links = self.context_layers.get("memory", {}).get("has_strong_links", False)
@@ -275,21 +342,11 @@ async def analyze_and_respond(query: str) -> str:
     return format_response(response, context)
 
 
-async def _test_analyzer() -> None:
-    """Simple manual testing helper."""
-
-    test_queries = [
-        "Срочно! Рынок падает что делать?",
-        "Почему я чувствую пустоту после успеха?",
-        "Как улучшить архитектуру EvoPyramid?",
-        "Расскажи о последних трендах в AI",
-    ]
-
-    for query in test_queries:
-        print(f"\n🔍 Тестируем: '{query}'")
-        result = await analyze_and_respond(query)
-        print(result)
-
-
-if __name__ == "__main__":
-    asyncio.run(_test_analyzer())
+__all__ = [
+    "QuantumContextAnalyzer",
+    "analyze_and_respond",
+    "agi_first_pipeline",
+    "soul_first_pipeline",
+    "role_first_pipeline",
+    "hybrid_pipeline",
+]
