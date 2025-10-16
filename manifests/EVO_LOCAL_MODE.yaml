@@ -12,6 +12,7 @@ evo_local_mode:
   device: "Samsung A24"
   repo_anchor: "evopyramid-ai"
   source_manifest: "EvoPyramid.ini"
+  capability_manifest: "manifests/EVO_LOCAL_CAPABILITY.yaml"
 
 runtime:
   python_env: "3.x"
@@ -54,6 +55,10 @@ codex_integration:
   push_branch: "codex-local"
   commit_mode: "daily"
   task: "analyze + summarize Termux signals into EvoChronosLog.md"
+  api_bridge:
+    manifest: "manifests/EVO_EVOPYRAMID_API.yaml"
+    purpose: "Synchronize EvoArk-Omega invocations with the unified EvoPyramid API routes."
+    status: "listening"
 
 notes:
   - Termux runs in observer state by default.
