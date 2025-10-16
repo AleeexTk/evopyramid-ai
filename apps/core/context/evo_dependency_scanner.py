@@ -273,6 +273,124 @@ def collect_priority_texts(
 
         results.append(
             {
+                "start": group[0]["mtime"],
+                "end": group[-1]["mtime"],
+                "count": len(group),
+                "kinds": sorted({item["kind"] for item in group}),
+            }
+        )
+    return waves
+
+
+def prepare_ingest_dirs(repo_root: Path) -> dict[str, Path]:
+    mapping = {
+        "root": (repo_root / INGEST_ROOT_REL).resolve(),
+        "pending_raw": (repo_root / PENDING_RAW_REL).resolve(),
+        "pending_annot": (repo_root / PENDING_ANNOT_REL).resolve(),
+        "processed": (repo_root / PROCESSED_REL).resolve(),
+    }
+    for path in mapping.values():
+        if not path.exists():
+            path.mkdir(parents=True, exist_ok=True)
+    return mapping
+
+
+def annotate_copy(source_path: Path, destination: Path, source_label: str) -> None:
+    with destination.open("w", encoding="utf-8") as target, source_path.open(
+        "r", encoding="utf-8", errors="ignore"
+    ) as original:
+        header = ANNOTATION_HEADER.format(timestamp=datetime.now().isoformat(), source=source_label)
+        target.write(header)
+        target.write(original.read())
+
+
+def process_priority_txt_with_namespace(
+    roots: List[Path],
+    repo_root: Path,
+    skip_paths: Iterable[Path],
+) -> list[dict]:
+    """Stage priority text files while preserving per-root namespaces."""
+
+    ingest_dirs = prepare_ingest_dirs(repo_root)
+    priority_docs: list[dict] = []
+
+    repo_root_resolved = repo_root.resolve()
+    root_tokens: dict[Path, str] = {}
+
+    for index, base in enumerate(roots):
+        resolved_base = base.resolve()
+        if resolved_base in root_tokens:
+            continue
+
+        try:
+            relative_label = resolved_base.relative_to(repo_root_resolved).as_posix()
+            if not relative_label:
+                relative_label = "repo_root"
+        except ValueError:
+            relative_label = resolved_base.name or "root"
+
+        sanitized = re.sub(r"[^A-Za-z0-9._-]", "_", relative_label)
+        root_tokens[resolved_base] = f"{index:02d}_{sanitized}"
+
+    for base in roots:
+        base_resolved = base.resolve()
+        root_token = root_tokens.get(base_resolved)
+        if not root_token:
+            continue
+
+        for file_path in walk_files(base, skip_paths=skip_paths):
+            if file_path.suffix.lower() not in PRIORITY_TXT_EXT:
+                continue
+            if is_relative_to(file_path, ingest_dirs["root"]):
+                continue
+
+            try:
+                size_kb = os.path.getsize(file_path) / 1024
+            except OSError:
+                continue
+
+            if size_kb < PRIORITY_THRESHOLD_KB:
+                continue
+
+            try:
+                relative_path = file_path.resolve().relative_to(base_resolved)
+            except Exception:
+                relative_path = Path(file_path.name)
+
+            staged_relative = Path(root_token) / relative_path
+
+            raw_dest = ingest_dirs["pending_raw"] / staged_relative
+            raw_dest.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                copy2(file_path, raw_dest)
+            except Exception:
+                continue
+
+            annotated_name = relative_path.stem + "_annotated" + relative_path.suffix
+            annotated_path = staged_relative.with_name(annotated_name)
+            annot_dest = ingest_dirs["pending_annot"] / annotated_path
+            annot_dest.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                annotate_copy(file_path, annot_dest, source_label=str(staged_relative))
+            except Exception:
+                try:
+                    raw_dest.unlink(missing_ok=True)
+                except Exception:
+                    pass
+                continue
+
+            priority_docs.append(
+                {
+                    "original": str(file_path.resolve()),
+                    "relative_to_root": rel_to(base, file_path),
+                    "staged_relative": str(staged_relative),
+                    "size_kb": round(size_kb, 2),
+                    "raw_copy": str(raw_dest.resolve()),
+                    "annotated_copy": str(annot_dest.resolve()),
+                }
+            )
+
+    return priority_docs
                 "source": str(path),
                 "copied_raw": str(raw_target),
                 "copied_annotated": str(annot_target),
@@ -396,6 +514,57 @@ def write_outputs(out_dir: Path, payload: dict) -> None:
 def run_scan(extra_roots: Optional[Sequence[str]] = None) -> Dict[str, object]:
     """Execute the dependency scan and return a structured payload."""
 
+def write_outputs(out_dir: Path, payload: Dict[str, object]) -> None:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    with (out_dir / "evo_dependency_map.json").open("w", encoding="utf-8") as json_file:
+        json.dump(payload, json_file, ensure_ascii=False, indent=2)
+
+    report_lines = [
+        f"[EvoDependencyScanner] {payload['timestamp']}",
+        f"Roots: {', '.join(payload['roots'])}",
+        f"Files with imports: {payload['stats']['files_with_imports']}",
+        f"Unique imports observed: {payload['stats']['unique_imports']}",
+        "",
+        "Top files by outgoing imports:",
+    ]
+    for name, value in payload["magnets"]["top_outgoing"]:
+        report_lines.append(f"  - {name}  → {value}")
+    report_lines.append("")
+    report_lines.append("Top import targets by incoming refs:")
+    for name, value in payload["magnets"]["top_incoming"]:
+        report_lines.append(f"  - {name}  ← {value}")
+    report_lines.append("")
+    report_lines.append("Artifact waves (logs/cache/tmp):")
+    for wave in payload["artifact_waves"]:
+        start = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(wave["start"]))
+        end = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(wave["end"]))
+        report_lines.append(
+            f"  - [{start} … {end}]  count={wave['count']} kinds={','.join(wave['kinds'])}"
+        )
+    report_lines.append("")
+    report_lines.append("High-priority .txt documents (>10 KB):")
+    for document in payload.get("priority_docs", [])[:50]:
+        report_lines.append(
+            "  • {source} (staged: {staged})  ({size} KB)  → raw={raw} annotated={annot}".format(
+                source=document.get("relative_to_root") or document.get("original"),
+                staged=document.get("staged_relative") or document.get("relative_to_root"),
+                size=document.get("size_kb", "?"),
+                raw=document.get("raw_copy", "?"),
+                annot=document.get("annotated_copy", "?"),
+            )
+        )
+    with (out_dir / "evo_dependency_report.log").open("w", encoding="utf-8") as report_file:
+        report_file.write("\n".join(report_lines))
+
+
+def main(argv: List[str] | None = None) -> None:
+    parser = argparse.ArgumentParser("EvoDependencyScanner")
+    parser.add_argument("--roots", nargs="*", help="Дополнительные корни для сканирования")
+    parser.add_argument("--out", default="logs", help="Каталог для вывода логов/JSON")
+    parser.add_argument(
+        "--window", type=int, default=30, help="Окно корреляции артефактов (секунды)"
+    )
+    args = parser.parse_args(argv)
     repo_root = detect_env_root()
     roots = list_roots(extra_roots)
     ingest_paths = ensure_ingest_dirs(repo_root)
@@ -403,6 +572,12 @@ def run_scan(extra_roots: Optional[Sequence[str]] = None) -> Dict[str, object]:
     files = list(iter_files(roots))
     py_files = [path for path in files if path.suffix.lower() in PY_EXT]
 
+    dependency_data = build_dependency_graph(roots, skip_paths=skip_paths)
+    magnets = rank_magnets(dependency_data["graph"], dependency_data["reverse"])
+    artifact_waves = correlate_artifacts(dependency_data["artifacts"], window_sec=args.window)
+    priority_docs = process_priority_txt_with_namespace(
+        roots, repo_root, skip_paths=skip_paths
+    )
     forward, reverse = build_import_maps(py_files)
     loglike_entries = detect_loglike(files)
     priority_corpus = collect_priority_texts(repo_root, files, ingest_paths)
@@ -417,6 +592,27 @@ def run_scan(extra_roots: Optional[Sequence[str]] = None) -> Dict[str, object]:
         "priority_texts": priority_corpus,
     }
 
+if __name__ == "__main__":
+    sys.exit(main())
+    data = build_dependency_graph(roots)
+    magnets = rank_magnets(data["graph"], data["reverse"])
+    artifact_waves = correlate_artifacts(data["artifacts"], window_sec=args.window)
+    priority_docs = process_priority_txt_with_namespace(roots, repo_root, skip_paths=[])
+
+    payload = {
+        "timestamp": datetime.now().isoformat(),
+        "roots": [str(root) for root in roots],
+        "graph": data["graph"],
+        "reverse": data["reverse"],
+        "artifacts": data["artifacts"],
+        "artifact_waves": artifact_waves,
+        "magnets": magnets,
+        "stats": {
+            "files_with_imports": len(data["graph"]),
+            "unique_imports": len(data["reverse"]),
+        },
+        "priority_docs": priority_docs,
+    }
     output_dir = repo_root / "logs"
     output_dir.mkdir(parents=True, exist_ok=True)
     json_path = output_dir / "evo_dependency_map.json"
