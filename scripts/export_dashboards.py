@@ -24,6 +24,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import re
 from typing import Any, Dict, Iterable, List, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Optional
 
 
 DEFAULT_LOG_PATH = Path("logs/trinity_metrics.log")
@@ -97,6 +98,8 @@ def _parse_float(value: Any) -> Optional[float]:
             if parsed is not None:
                 return parsed
         return None
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return float(value)
     if isinstance(value, str):
         lowered = value.strip().lower()
         mapping = {"low": 0.25, "medium": 0.5, "high": 0.85}
@@ -142,6 +145,9 @@ def _parse_float(value: Any) -> Optional[float]:
                     return float(candidate)
                 except ValueError:
                     return None
+        try:
+            return float(lowered)
+        except ValueError:
             return None
     return None
 
@@ -180,6 +186,10 @@ def _parse_int(value: Any) -> Optional[int]:
             float_candidate = _parse_float(stripped)
             if float_candidate is not None:
                 return int(round(float_candidate))
+    if isinstance(value, str):
+        try:
+            return int(value)
+        except ValueError:
             return None
     return None
 
@@ -210,6 +220,14 @@ def _extract_first(record: Dict[str, Any], *paths: Iterable[str]) -> Any:
         result = _traverse(record, tuple(path))
         if result is not None:
             return result
+    for path in paths:
+        node: Any = record
+        for key in path:
+            if not isinstance(node, dict) or key not in node:
+                break
+            node = node[key]
+        else:
+            return node
     return None
 
 
@@ -250,6 +268,8 @@ def _extract_agent_tags(record: Dict[str, Any]) -> List[str]:
                 if tag_str:
                     flattened.append(tag_str)
         return flattened
+    if isinstance(raw_tags, list):
+        return [str(tag) for tag in raw_tags]
     return [str(raw_tags)]
 
 
@@ -443,6 +463,11 @@ def _build_timeline_map(records: List[Dict[str, Any]], source: Path) -> Dict[str
                 if len(parts) == 2:
                     lat = _parse_float(parts[0])
                     lon = _parse_float(parts[1])
+            lat = _parse_float(location.get("lat"))
+            lon = _parse_float(location.get("lon"))
+        elif isinstance(location, (list, tuple)) and len(location) == 2:
+            lat = _parse_float(location[0])
+            lon = _parse_float(location[1])
 
         event: Dict[str, Any] = {
             "timestamp": timestamp,
