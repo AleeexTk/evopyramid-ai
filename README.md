@@ -5,6 +5,8 @@ concepts, PEAR processors, and related ecosystem tooling. This repository now
 includes the foundational community and automation scaffolding required to grow
 safely.
 
+🔗 **EvoPyramid AI Repository:** [evopyramidai](https://github.com/AleeexTk/evopyramid-ai)
+
 ## Getting Started
 
 1. Clone the repository and create a virtual environment:
