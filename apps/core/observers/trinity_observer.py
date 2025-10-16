@@ -4,6 +4,11 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import logging
+import random
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from typing import Any, Callable, Dict
 import json
 import os
 from dataclasses import dataclass
@@ -38,9 +43,30 @@ class ObserverMode(Enum):
     REFLECTIVE_SYNTHESIS = "reflective_synthesis"
 
 
+logger = logging.getLogger(__name__)
+
+
 class TrinityObserver:
     """Combines Chronos, Kairos, and Mnemosyne subsystems into one observer."""
 
+    def __init__(self) -> None:
+        self._state = _TrinityState()
+        self._environment = self._capture_context(detect_environment, {"env_type": "unknown"})
+        self._device_metrics = self._capture_context(analyze_device, {})
+
+    def _capture_context(
+        self, provider: Callable[[], Dict[str, Any]], fallback: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        try:
+            return provider()
+        except OSError as exc:  # PermissionError and friends
+            logger.warning("Failed to capture context via %s: %s", provider.__name__, exc)
+            result = fallback.copy()
+            result["error"] = f"{exc.__class__.__name__}: {exc}"
+            return result
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.debug("Context provider %s failed with %s", provider.__name__, exc)
+            return fallback.copy()
     def __init__(self, system_name: str = "EvoPyramid") -> None:
         self.system_name = system_name
         self.mode = ObserverMode.ACTIVE_MONITORING

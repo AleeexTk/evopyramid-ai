@@ -15,12 +15,21 @@ if [ "$ENV" = "termux" ]; then
   pkg update -y && pkg upgrade -y
   pkg install -y python git openssh curl jq
 else
-  if ! command -v git >/dev/null 2>&1; then
-    sudo apt-get update
-    sudo apt-get install -y git
-  fi
-  if ! command -v $PYBIN >/dev/null 2>&1; then
-    sudo apt-get install -y python3 python3-pip
+  if command -v apt-get >/dev/null 2>&1; then
+    if ! command -v git >/dev/null 2>&1; then
+      sudo apt-get update
+      sudo apt-get install -y git
+    fi
+    if ! command -v $PYBIN >/dev/null 2>&1; then
+      sudo apt-get install -y python3 python3-pip
+    fi
+  else
+    if ! command -v git >/dev/null 2>&1; then
+      echo "[!] git not found and APT is unavailable. Please install git manually." | tee -a "$LOG"
+    fi
+    if ! command -v $PYBIN >/dev/null 2>&1; then
+      echo "[!] $PYBIN not found and APT is unavailable. Please install Python manually." | tee -a "$LOG"
+    fi
   fi
 fi
 
