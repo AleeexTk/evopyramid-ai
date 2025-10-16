@@ -86,6 +86,37 @@ first-class execution surface inside the architecture.
    and shell stages share the same timeline.
 5. Leaves the launched module running in its own session so the Termux node can
    continue executing EvoPyramid rituals after the boot script exits.
+Termux:Boot plugin. The script ensures storage directories exist, keeps the
+repository aligned with `origin/main`, replays local adjustments, and launches a
+background runtime module while capturing logs under `${EVO_PARENT_DIR}/logs`.
+
+1. Stores the repository in `$HOME/evopyramid-ai` by default, aligning with
+   Termux best practices to avoid `detected dubious ownership` errors on
+   external storage. Override `EVO_PARENT_DIR` if you intentionally host the
+   repo elsewhere.
+2. Ensures `${EVO_PARENT_DIR}/logs/termux_boot/` exists before logging to avoid
+   the "No such file or directory" errors observed during manual dry runs.
+3. Optionally clones the repository when `${EVO_PARENT_DIR}/${REPO_NAME}` is
+   missing, preventing premature aborts on freshly provisioned devices.
+4. Registers the working tree as a trusted Git `safe.directory` (controlled via
+   `GIT_AUTO_SAFE_DIR`) prior to fetch/reset cycles so new Git versions operate
+   cleanly on Android storage volumes.
+5. Applies a stash-reset-pop cycle, creates commits for local tweaks, and uses
+   `--force-with-lease` pushes to keep GitHub in sync without clobbering remote
+   updates.
+6. Launches `apps.core.trinity_observer` via the Termux Python interpreter by
+background runtime module while capturing logs on external storage.
+
+1. Ensures `/storage/emulated/0/EVO_LOCAL/logs/termux_boot/` exists before
+   logging to avoid the "No such file or directory" errors observed during
+   manual dry runs.
+2. Optionally clones the repository when `EVO_LOCAL/evopyramid-ai` is missing,
+   preventing premature aborts on freshly provisioned devices.
+3. Applies a stash-reset-pop cycle, creates commits for local tweaks, and uses
+   `--force-with-lease` pushes to keep GitHub in sync without clobbering remote
+   updates.
+4. Launches `apps.core.trinity_observer` via the Termux Python interpreter by
+   default; override `PYTHON_ENTRYPOINT` to start another module.
 
 Place the script under `~/.termux/boot/start-evopyramid.sh`, grant execute
 permissions, and adjust environment variables (`EVO_PARENT_DIR`, `PY_ENV`, etc.)
@@ -113,3 +144,6 @@ It currently emits a no-op message.
 ```bash
 python scripts/local_sync_manager.py
 ```
+> under `/storage/emulated/0/…`, move it into `$HOME` or export `EVO_PARENT_DIR`
+> accordingly before the next boot. Keeping the repository inside Termux's home
+> directory avoids additional permission prompts and improves Git stability.
