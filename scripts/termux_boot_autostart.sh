@@ -3,6 +3,8 @@
 
 set -euo pipefail
 
+DEFAULT_HOME="${HOME:-/data/data/com.termux/files/home}"
+EVO_PARENT_DIR="${EVO_PARENT_DIR:-$DEFAULT_HOME}"
 EVO_PARENT_DIR="${EVO_PARENT_DIR:-/storage/emulated/0/EVO_LOCAL}"
 REPO_NAME="${REPO_NAME:-evopyramid-ai}"
 REPO_URL="${REPO_URL:-https://github.com/AleeexTk/evopyramid-ai.git}"
@@ -12,6 +14,7 @@ PY_ENV="${PY_ENV:-/data/data/com.termux/files/usr/bin/python3}"
 PYTHON_ENTRYPOINT="${PYTHON_ENTRYPOINT:-apps.core.trinity_observer}"
 GIT_REMOTE="${GIT_REMOTE:-origin}"
 GIT_BRANCH="${GIT_BRANCH:-main}"
+GIT_AUTO_SAFE_DIR="${GIT_AUTO_SAFE_DIR:-1}"
 WAKE_LOCK_HELD=0
 
 LOG_FILE="$LOG_DIR/boot-$(date +%Y%m%d-%H%M%S).log"
@@ -35,6 +38,30 @@ log() {
     printf '[%s] %s\n' "$(date +%Y-%m-%dT%H:%M:%S%z)" "$message" | tee -a "$LOG_FILE"
   else
     printf '[%s] %s\n' "$(date +%Y-%m-%dT%H:%M:%S%z)" "$message" >&2
+  fi
+}
+
+ensure_git_safe_directory() {
+  local repo_path="$1"
+  if [[ "$GIT_AUTO_SAFE_DIR" != "1" ]]; then
+    return
+  fi
+
+  if [[ -z "$repo_path" ]]; then
+    return
+  fi
+
+  local existing
+  existing="$(git config --global --get-all safe.directory 2>/dev/null || true)"
+  if printf '%s\n' "$existing" | grep -Fxq "$repo_path"; then
+    log "Git safe.directory already trusts $repo_path"
+    return
+  fi
+
+  if git config --global --add safe.directory "$repo_path" >>"$LOG_FILE" 2>&1; then
+    log "Registered $repo_path as a trusted git safe.directory"
+  else
+    log "Failed to register git safe.directory for $repo_path"
   fi
 }
 
@@ -84,6 +111,8 @@ if [[ ! -d .git ]]; then
   log "Directory $LOCAL_DIR is not a git repository"
   exit 1
 fi
+
+ensure_git_safe_directory "$LOCAL_DIR"
 
 log "Fetching latest $GIT_REMOTE/$GIT_BRANCH"
 if ! git fetch "$GIT_REMOTE" "$GIT_BRANCH" >>"$LOG_FILE" 2>&1; then
