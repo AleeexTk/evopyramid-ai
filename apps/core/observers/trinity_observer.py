@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import random
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 
 try:  # Runtime optional dependency: EvoLocalContext
     from apps.core.context import analyze_device, detect_environment
@@ -29,13 +30,30 @@ class _TrinityState:
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
 
+logger = logging.getLogger(__name__)
+
+
 class TrinityObserver:
     """Собирает телеметрию, совместимую с API и бенчмарками."""
 
     def __init__(self) -> None:
         self._state = _TrinityState()
-        self._environment = detect_environment()
-        self._device_metrics = analyze_device()
+        self._environment = self._capture_context(detect_environment, {"env_type": "unknown"})
+        self._device_metrics = self._capture_context(analyze_device, {})
+
+    def _capture_context(
+        self, provider: Callable[[], Dict[str, Any]], fallback: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        try:
+            return provider()
+        except OSError as exc:  # PermissionError and friends
+            logger.warning("Failed to capture context via %s: %s", provider.__name__, exc)
+            result = fallback.copy()
+            result["error"] = f"{exc.__class__.__name__}: {exc}"
+            return result
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.debug("Context provider %s failed with %s", provider.__name__, exc)
+            return fallback.copy()
 
     async def get_current_state(self) -> Dict[str, Any]:
         async with self._state.lock:
