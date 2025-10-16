@@ -2,6 +2,8 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pytest
+
 from scripts.export_dashboards import export_dashboards
 
 
@@ -199,3 +201,38 @@ def test_export_dashboards_handles_nested_collections_and_encodings(tmp_path) ->
     event = timeline["events"][0]
     assert event["lineage"] == "lineages.nested"
     assert event["coordinates"] == {"lat": 55.75, "lon": 37.61}
+
+
+def test_export_dashboards_real_world_capture_fixture(tmp_path) -> None:
+    """Validate exporter against a captured Kairos Compass telemetry snapshot."""
+
+    fixture_path = Path(__file__).resolve().parent / "data" / "kairos_compass_capture_20241221.jsonl"
+    log_file = tmp_path / "trinity_metrics.log"
+    log_file.write_text(fixture_path.read_text(encoding="utf-8"), encoding="utf-8")
+
+    artifacts = export_dashboards(log_file, tmp_path / "EvoDashboard")
+
+    compass = artifacts.kairos_compass
+    assert compass["records"] == 3
+    assert compass["skipped_records"] == 0
+    assert compass["matrix"]["3"]["high"]["count"] == 1
+    assert compass["matrix"]["2"]["mid"]["count"] == 1
+
+    cohesion = artifacts.cohesion_dashboard["metrics"]
+    assert cohesion["average_latency_ms"] == pytest.approx(1464.67, abs=0.01)
+    assert cohesion["average_replay_count"] == pytest.approx(1.33, abs=0.01)
+    assert cohesion["average_love_resonance_delta"] == pytest.approx(0.143, abs=0.001)
+    assert cohesion["average_trinity_coherence"] == pytest.approx(0.847, abs=0.001)
+    assert cohesion["cohesion_index"] == 1.0
+
+    timeline_events = artifacts.timeline_map["events"]
+    assert len(timeline_events) == 3
+    lineages = {event["lineage"] for event in timeline_events}
+    assert {"lineages.kairos_bridge", "lineages.logos_bridge", "lineages.memory_wave"} <= lineages
+
+    coords = [event["coordinates"] for event in timeline_events if "coordinates" in event]
+    assert any(pytest.approx(55.7534, abs=1e-4) == coord["lat"] for coord in coords)
+    assert any(pytest.approx(37.6216, abs=1e-4) == coord["lon"] for coord in coords)
+
+    logos_tags = next(event["agents"] for event in timeline_events if event["lineage"] == "lineages.logos_bridge")
+    assert set(logos_tags) == {"Architect", "Philosopher"}
