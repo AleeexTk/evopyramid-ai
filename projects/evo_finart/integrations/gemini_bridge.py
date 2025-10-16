@@ -142,5 +142,8 @@ class GeminiFinArtBridge:
             return response
         return {"repr": repr(response)}
 
-    def to_dict(self) -> Dict[str, Any]:
-        return asdict(self.config)
+    def to_dict(self, *, include_sensitive: bool = False) -> Dict[str, Any]:
+        data = asdict(self.config)
+        if not include_sensitive:
+            data.pop("api_key", None)
+        return data
