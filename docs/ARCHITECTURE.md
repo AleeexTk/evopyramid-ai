@@ -8,12 +8,16 @@ architecture changes.
 
 - Repository scaffolding with community and automation guidelines.
 - CI workflow running linting (ruff) and a Python bytecode compilation smoke test.
+- Chaos-to-Orbit sketch that models how the platform emerges from raw ideation
+  into the protected EvoPyramid-AI core (see `docs/visualizations/chaos-orbit-architecture.md`).
 
 ## Next Steps
 
 - [ ] Document the core EVO modules and their relationships.
 - [ ] Describe deployment targets and runtime environments.
 - [ ] Add architectural decision records under `docs/adr/`.
+- [ ] Digitize the Chaos-to-Orbit visualization and link each orbit to concrete
+      roles, tools, and rituals.
 
 ## Contributing to the Architecture Doc
 
