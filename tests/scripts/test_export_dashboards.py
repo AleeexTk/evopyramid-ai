@@ -151,3 +151,51 @@ def test_export_dashboards_handles_malformed_records(tmp_path) -> None:
     metrics = cohesion["metrics"]
     assert metrics["average_latency_ms"] == 9999.0
     assert 0.0 <= metrics["cohesion_index"] <= 1.0
+
+
+def test_export_dashboards_handles_nested_collections_and_encodings(tmp_path) -> None:
+    timestamp = datetime(2025, 3, 3, tzinfo=timezone.utc).isoformat()
+
+    log_file = tmp_path / "trinity_metrics.log"
+    _write_log(
+        log_file,
+        [
+            {
+                "meta": {"timestamp": timestamp, "agent_tags": [["Observer"], ["Scientist", "Soul"]]},
+                "metrics": [
+                    {"impact": {"value": "85%"}},
+                    {"kairos_level": "4"},
+                    {"latency_ms": "1,200"},
+                    {"retries": {"value": "2"}},
+                    {"love_resonance_delta": ["0,15", {"fallback": 0.12}]},
+                ],
+                "system_state": [
+                    {"temporal_coherence": "0,78"},
+                    {"conceptual_clarity": "0.81"},
+                ],
+                "location": {"coordinates": ["55,75°N", "37,61°E"]},
+                "metadata": {"lineage": "lineages.nested"},
+            }
+        ],
+    )
+
+    artifacts = export_dashboards(log_file, tmp_path / "EvoDashboard")
+
+    compass = artifacts.kairos_compass
+    timeline = artifacts.timeline_map
+    cohesion = artifacts.cohesion_dashboard
+
+    assert compass["records"] == 1
+    assert compass["events"][0]["impact"] == 0.85
+    assert compass["events"][0]["kairos_level"] == 4
+    assert set(compass["events"][0]["agent_tags"]) == {"Observer", "Scientist", "Soul"}
+
+    metrics = cohesion["metrics"]
+    assert metrics["average_latency_ms"] == 1200.0
+    assert metrics["average_replay_count"] == 2.0
+    assert metrics["average_love_resonance_delta"] == 0.15
+    assert metrics["average_trinity_coherence"] == 0.78
+
+    event = timeline["events"][0]
+    assert event["lineage"] == "lineages.nested"
+    assert event["coordinates"] == {"lat": 55.75, "lon": 37.61}

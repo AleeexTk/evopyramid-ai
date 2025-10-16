@@ -22,6 +22,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+import re
+from typing import Any, Dict, Iterable, List, Optional, Sequence
 from typing import Any, Dict, Iterable, List, Optional
 
 
@@ -75,6 +77,27 @@ def _ensure_output_dir(output_dir: Path) -> None:
 def _parse_float(value: Any) -> Optional[float]:
     if value is None:
         return None
+    if isinstance(value, bool):
+        return float(int(value))
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, (list, tuple)):
+        for item in value:
+            parsed = _parse_float(item)
+            if parsed is not None:
+                return parsed
+        return None
+    if isinstance(value, dict):
+        for key in ("value", "amount", "score", "metric", "avg", "mean", "val"):
+            if key in value:
+                parsed = _parse_float(value[key])
+                if parsed is not None:
+                    return parsed
+        for item in value.values():
+            parsed = _parse_float(item)
+            if parsed is not None:
+                return parsed
+        return None
     if isinstance(value, (int, float)) and not isinstance(value, bool):
         return float(value)
     if isinstance(value, str):
@@ -82,6 +105,46 @@ def _parse_float(value: Any) -> Optional[float]:
         mapping = {"low": 0.25, "medium": 0.5, "high": 0.85}
         if lowered in mapping:
             return mapping[lowered]
+
+        cleaned = value.strip().replace("°", "")
+        cleaned = cleaned.replace("−", "-")
+        cleaned = cleaned.replace("—", "-")
+        cleaned = cleaned.replace("%", "")
+        cleaned = cleaned.replace("_", "")
+        cleaned = re.sub(r"[A-Za-z]+$", "", cleaned)
+        cleaned = cleaned.replace(" ", "")
+
+        if "," in cleaned and "." not in cleaned:
+            sign = ""
+            core = cleaned
+            if core and core[0] in "+-":
+                sign = core[0]
+                core = core[1:]
+            parts = core.split(",")
+            if len(parts) > 1 and all(part.isdigit() for part in parts):
+                if len(parts[-1]) <= 2:
+                    cleaned = sign + parts[0] + "." + "".join(parts[1:])
+                else:
+                    cleaned = sign + "".join(parts)
+            else:
+                cleaned = cleaned.replace(",", "")
+        else:
+            cleaned = cleaned.replace(",", "")
+
+        try:
+            return float(cleaned)
+        except ValueError:
+            match = re.search(r"[-+]?\d+(?:[.,]\d+)?", cleaned)
+            if match:
+                candidate = match.group(0)
+                if "," in candidate and "." not in candidate:
+                    candidate = candidate.replace(",", ".")
+                else:
+                    candidate = candidate.replace(",", "")
+                try:
+                    return float(candidate)
+                except ValueError:
+                    return None
         try:
             return float(lowered)
         except ValueError:
@@ -96,6 +159,33 @@ def _parse_int(value: Any) -> Optional[int]:
         return int(value)
     if isinstance(value, (int, float)):
         return int(round(value))
+    if isinstance(value, (list, tuple)):
+        for item in value:
+            parsed = _parse_int(item)
+            if parsed is not None:
+                return parsed
+        return None
+    if isinstance(value, dict):
+        for key in ("value", "count", "level", "metric"):
+            if key in value:
+                parsed = _parse_int(value[key])
+                if parsed is not None:
+                    return parsed
+        for item in value.values():
+            parsed = _parse_int(item)
+            if parsed is not None:
+                return parsed
+        return None
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            return None
+        try:
+            return int(stripped)
+        except ValueError:
+            float_candidate = _parse_float(stripped)
+            if float_candidate is not None:
+                return int(round(float_candidate))
     if isinstance(value, str):
         try:
             return int(value)
@@ -105,6 +195,31 @@ def _parse_int(value: Any) -> Optional[int]:
 
 
 def _extract_first(record: Dict[str, Any], *paths: Iterable[str]) -> Any:
+    def _traverse(node: Any, path: Sequence[str]) -> Any:
+        if not path:
+            return node
+
+        key = path[0]
+        rest = path[1:]
+
+        if isinstance(node, dict):
+            if key not in node:
+                return None
+            return _traverse(node[key], rest)
+
+        if isinstance(node, (list, tuple)):
+            for item in node:
+                result = _traverse(item, path)
+                if result is not None:
+                    return result
+            return None
+
+        return None
+
+    for path in paths:
+        result = _traverse(record, tuple(path))
+        if result is not None:
+            return result
     for path in paths:
         node: Any = record
         for key in path:
@@ -143,6 +258,16 @@ def _extract_agent_tags(record: Dict[str, Any]) -> List[str]:
         return []
     if isinstance(raw_tags, str):
         return [tag.strip() for tag in raw_tags.split(",") if tag.strip()]
+    if isinstance(raw_tags, (list, tuple)):
+        flattened: List[str] = []
+        for tag in raw_tags:
+            if isinstance(tag, (list, tuple)):
+                flattened.extend(str(inner).strip() for inner in tag if str(inner).strip())
+            else:
+                tag_str = str(tag).strip()
+                if tag_str:
+                    flattened.append(tag_str)
+        return flattened
     if isinstance(raw_tags, list):
         return [str(tag) for tag in raw_tags]
     return [str(raw_tags)]
@@ -321,6 +446,23 @@ def _build_timeline_map(records: List[Dict[str, Any]], source: Path) -> Dict[str
         lat: Optional[float] = None
         lon: Optional[float] = None
         if isinstance(location, dict):
+            if "coordinates" in location and isinstance(location["coordinates"], (list, tuple)):
+                coords = location["coordinates"]
+                if len(coords) == 2:
+                    lat = _parse_float(coords[0])
+                    lon = _parse_float(coords[1])
+            else:
+                lat = _parse_float(location.get("lat"))
+                lon = _parse_float(location.get("lon"))
+        elif isinstance(location, (list, tuple)) and len(location) == 2:
+            lat = _parse_float(location[0])
+            lon = _parse_float(location[1])
+        elif isinstance(location, str):
+            if "," in location:
+                parts = [part.strip() for part in location.split(",")]
+                if len(parts) == 2:
+                    lat = _parse_float(parts[0])
+                    lon = _parse_float(parts[1])
             lat = _parse_float(location.get("lat"))
             lon = _parse_float(location.get("lon"))
         elif isinstance(location, (list, tuple)) and len(location) == 2:
