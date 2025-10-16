@@ -18,6 +18,7 @@ ENV/
 # Logs and databases
 *.log
 *.sqlite3
+EvoDashboard/*.json
 
 # Editor directories and files
 .idea/
