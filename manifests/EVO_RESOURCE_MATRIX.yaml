@@ -63,6 +63,7 @@ infrastructure:
     telemetry:
       integration_guard: "mirror_without_attachment"
       logging: "logs/resource/free_api_band.log"
+      secret_policy: "no secrets stored"
       detox_sequence:
         - "Record response signature"
         - "Harvest learning into EvoMemory"
