@@ -135,9 +135,28 @@ lineages:
       - "EVO_SYNC_MANIFEST.yaml::agents.resource_matrix"
     status: "active"
     tags:
+  - "Chronos"
+  - "Logos"
+  - "Kairos"
+
+  - id: "evobridge_codex_governor"
+    name: "EvoBridge Codex Governance Engine"
+    tier: "Structural"
+    parent: "EvoBridge"
+    anchor: "EvoBridge/evo_codex_internal.py"
+    description: |
+      Python bridge enabling EvoCodex to synchronise GitHub rulesets through
+      authenticated API calls, encapsulating governance authority and audit
+      logging.
+    doc_links:
+      - "docs/EVO_CODEX_USER_CHARTER.md"
+      - ".github/workflows/evo_codex_ruleset.yml"
+    sync_references:
+      - "EVO_CODEX_INTERNAL.yaml::commands.apply_ruleset"
+    status: "active"
+    tags:
       - "Chronos"
       - "Logos"
-      - "Kairos"
 
 notes:
   - "Every new subsystem must declare lineage here to avoid architectural orphans."
