@@ -5,6 +5,7 @@ set -euo pipefail
 
 DEFAULT_HOME="${HOME:-/data/data/com.termux/files/home}"
 EVO_PARENT_DIR="${EVO_PARENT_DIR:-$DEFAULT_HOME}"
+EVO_PARENT_DIR="${EVO_PARENT_DIR:-/storage/emulated/0/EVO_LOCAL}"
 REPO_NAME="${REPO_NAME:-evopyramid-ai}"
 REPO_URL="${REPO_URL:-https://github.com/AleeexTk/evopyramid-ai.git}"
 LOCAL_DIR="${LOCAL_DIR:-$EVO_PARENT_DIR/$REPO_NAME}"
