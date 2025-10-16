@@ -1,3 +1,17 @@
+from pathlib import Path
+import sys
+import types
+
+import pytest
+
+CORE_PACKAGE = "projects.evo_finart.core"
+if CORE_PACKAGE not in sys.modules:
+    core_stub = types.ModuleType(CORE_PACKAGE)
+    core_stub.__path__ = [
+        str(Path(__file__).resolve().parents[3] / "projects" / "evo_finart" / "core")
+    ]
+    sys.modules[CORE_PACKAGE] = core_stub
+
 from projects.evo_finart.core.evo_insight_engine import (
     EvoInsightEngine,
     GeminiConfig,
@@ -29,3 +43,10 @@ def test_bridge_returns_placeholder_when_disabled():
     assert reflection.text == ""
     assert reflection.raw["status"] == "disabled"
     assert reflection.raw["insight"] == payload
+
+
+def test_process_rejects_non_mapping_payload():
+    engine = EvoInsightEngine(bridge=GeminiFinArtBridge(GeminiConfig(enabled=False)))
+
+    with pytest.raises(TypeError):
+        engine.process({"topic": "gold", "payload": "not-a-dict"})

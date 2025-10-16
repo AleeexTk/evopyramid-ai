@@ -1,0 +1,22 @@
+# Configuration manifest for the EvoCodex internal automation agent.
+version: 1
+capabilities:
+  - manage_rulesets
+  - audit_branch_policies
+  - enforce_codex_review
+permissions:
+  write:
+    - .github/rulesets/
+  read:
+    - .github/workflows/
+    - .github/ISSUE_TEMPLATE/
+sync_reference:
+  - EVO_SYNC_MANIFEST.yaml::agents.codex_internal
+commands:
+  apply_ruleset:
+    description: Apply the governance ruleset to the repository.
+    entrypoint: python EvoBridge/evo_codex_internal.py --apply-ruleset {path}
+    parameters:
+      path:
+        type: path
+        required: true
