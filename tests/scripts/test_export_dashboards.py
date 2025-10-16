@@ -79,3 +79,75 @@ def test_export_dashboards_creates_payloads(tmp_path) -> None:
     assert artifacts.kairos_compass["records"] == 3
     assert artifacts.cohesion_dashboard["samples"] == 3
     assert len(artifacts.timeline_map["events"]) == 3
+
+
+def test_export_dashboards_handles_malformed_records(tmp_path) -> None:
+    """Ensure malformed Kairos events do not break the exporter."""
+
+    log_file = tmp_path / "trinity_metrics.log"
+    timestamp = datetime(2025, 2, 2, tzinfo=timezone.utc).isoformat()
+
+    malformed_lines = [
+        json.dumps(
+            {
+                "timestamp": timestamp,
+                "impact": 0.45,
+                "kairos_level": 1,
+                "latency_ms": "fast",  # ignored during numeric parsing
+                "agent_tags": "Observer,Scientist",
+            },
+            ensure_ascii=False,
+        ),
+        json.dumps(
+            {
+                "timestamp": "broken",
+                "impact": "n/a",
+                "kairos_level": "?",
+                "agents": ["Architect"],
+            },
+            ensure_ascii=False,
+        ),
+        "not-json",
+        json.dumps(
+            {
+                "metrics": {"impact": -5, "kairos_level": 3},
+                "observability": {"latency_ms": 9999, "retries": 6},
+                "metadata": {"agent_tags": ["Scientist"]},
+            },
+            ensure_ascii=False,
+        ),
+        json.dumps(
+            {
+                "meta": {"timestamp": timestamp},
+                "components": {"kairos": {"impact": 120, "level": 5}},
+                "location": ["55.7", "37.6"],
+                "love_resonance_delta": "0.33",
+            },
+            ensure_ascii=False,
+        ),
+    ]
+
+    log_file.write_text("\n".join(malformed_lines) + "\n", encoding="utf-8")
+
+    artifacts = export_dashboards(log_file, tmp_path / "EvoDashboard")
+
+    compass = artifacts.kairos_compass
+    timeline = artifacts.timeline_map
+    cohesion = artifacts.cohesion_dashboard
+
+    # Only entries with usable impact and Kairos level values are counted.
+    assert compass["records"] == 3
+    assert compass["skipped_records"] == 1
+
+    impacts = {event["impact"] for event in compass["events"]}
+    assert 0.0 in impacts  # negative values are clamped to 0.0
+    assert 1.0 in impacts  # large values are normalised into [0, 1]
+
+    # Timeline should include every successfully parsed JSON record, even if partial.
+    assert len(timeline["events"]) == 4
+    assert any("coordinates" in event for event in timeline["events"])
+
+    # Cohesion dashboard gracefully ignores malformed numeric fields.
+    metrics = cohesion["metrics"]
+    assert metrics["average_latency_ms"] == 9999.0
+    assert 0.0 <= metrics["cohesion_index"] <= 1.0
