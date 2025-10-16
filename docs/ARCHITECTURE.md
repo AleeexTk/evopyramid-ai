@@ -2,7 +2,7 @@
 
 This document captures the living architecture of EvoPyramid-AI. It blends the
 original scaffolding guidelines with the active execution graph shepherded by the
-Trinity-4 roles.
+Trinity-4 roles. 🔗 **Canonical Repository Anchor:** [evopyramidai](https://github.com/AleeexTk/evopyramid-ai)
 
 ## Trinity-4 Execution Weave
 
