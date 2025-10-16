@@ -68,6 +68,7 @@ Each agent attaches its resonance tag (`field_alignment`, `analysis`, `alert`, `
 - **Map View:** Plots geographic context when location metadata is present.
 - **Cohesion Dashboard:** Aggregates commit resonance scores against Trinity coherence metrics.
 - **Kairos Compass:** Four-quadrant board mapping `impact × kairos_level` for daily Trinity reflections.
+- **EvoDashboard Export Loop:** GitHub Actions запускает `scripts/export_dashboards.py`, чтобы сформировать `EvoDashboard/*.json` артефакты (Compass, Cohesion, Timeline/Map) и закрепить визуализации Kairos ↔ Logos в CI.【F:scripts/export_dashboards.py†L1-L11】【F:scripts/export_dashboards.py†L368-L380】【F:.github/workflows/ci.yml†L33-L50】
 
 ## Operational Guidelines
 
@@ -108,5 +109,6 @@ evo_directive:
 1. Wire automated regression tests for the EvoRouter → Notion bridge to validate schema drift.
 2. Extend `api/router.py` with a retryable task queue (Redis or local persistent queue) to guard against transient Notion outages.
 3. Surface Notion acknowledgement metrics alongside Codex CI results in `logs/trinity_metrics.log`.
-4. Prototype a reverse sync where Notion decisions (e.g., approved rituals) spawn GitHub issues via EvoRouter.
-5. Formalise agent training prompts inside Notion's AI Workflow library so they inherit EvoPyramid Canon language.
+4. Протестировать экспорт EvoDashboard на аномальных `KairosEvent` (нулевые и отрицательные `impact`, отсутствующие `agent_tags`), чтобы гарантировать устойчивость визуализаций.
+5. Prototype a reverse sync where Notion decisions (e.g., approved rituals) spawn GitHub issues via EvoRouter.
+6. Formalise agent training prompts inside Notion's AI Workflow library so they inherit EvoPyramid Canon language.
