@@ -23,6 +23,10 @@ heal, and execute the same rituals as desktop or cloud peers.
   paths, safe-directory registration, and the Trinity Observer module by
   default.
 
+> ℹ️ **Нужна инструкция?** См. пошаговое руководство в
+> [`docs/Termux_Runtime_Quickstart.md`](Termux_Runtime_Quickstart.md) — там описан
+> полный путь от чистого Termux до работающего узла EvoPyramid.
+
 ## Boot Flow
 
 1. `scripts/termux_boot_autostart.sh` seeds environment variables and invokes

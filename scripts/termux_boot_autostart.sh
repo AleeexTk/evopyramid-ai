@@ -15,6 +15,22 @@ PY_ENV="${PY_ENV:-/data/data/com.termux/files/usr/bin/python3}"
 ENTRY_POINT="${PYTHON_ENTRYPOINT:-apps.core.trinity_observer}"
 GIT_REMOTE="${GIT_REMOTE:-origin}"
 GIT_BRANCH="${GIT_BRANCH:-main}"
+RUNTIME_SCRIPT_REL="core/runtime/main.py"
+
+expand_path() {
+  case "$1" in
+    "~"|"~"/*)
+      printf '%s\n' "${HOME}${1:1}"
+      ;;
+    *)
+      printf '%s\n' "$1"
+      ;;
+  esac
+}
+
+EVO_PARENT_DIR="$(expand_path "$EVO_PARENT_DIR")"
+LOCAL_DIR="$(expand_path "$LOCAL_DIR")"
+LOG_DIR="$(expand_path "$LOG_DIR")"
 RUNTIME_SCRIPT="core/runtime/main.py"
 
 mkdir -p "$LOG_DIR"
@@ -37,6 +53,38 @@ if [ ! -x "$PY_ENV" ]; then
   fi
 fi
 
+if ! command -v git >/dev/null 2>&1; then
+  log "git not found in PATH; install it via 'pkg install git'"
+  exit 1
+fi
+
+ensure_repository_materialised() {
+  if [ -f "$LOCAL_DIR/$RUNTIME_SCRIPT_REL" ]; then
+    return
+  fi
+
+  if [ -d "$LOCAL_DIR/.git" ]; then
+    log "Repository detected but runtime script missing; refreshing working tree"
+    (
+      cd "$LOCAL_DIR" && \
+      git fetch "$GIT_REMOTE" "$GIT_BRANCH" >>"$LOG_FILE" 2>&1 && \
+      git reset --hard "$GIT_REMOTE/$GIT_BRANCH" >>"$LOG_FILE" 2>&1
+    ) || true
+  else
+    log "Cloning repository into $LOCAL_DIR"
+    parent_dir="$(dirname -- "$LOCAL_DIR")"
+    mkdir -p "$parent_dir"
+    git clone "$REPO_URL" "$LOCAL_DIR" >>"$LOG_FILE" 2>&1 || {
+      log "git clone failed; ensure network access and credentials"
+      exit 1
+    }
+  fi
+}
+
+ensure_repository_materialised
+
+if [ ! -f "$LOCAL_DIR/$RUNTIME_SCRIPT_REL" ]; then
+  log "Runtime entry script $LOCAL_DIR/$RUNTIME_SCRIPT_REL missing"
 if [ ! -f "$RUNTIME_SCRIPT" ]; then
   log "Runtime entry script $RUNTIME_SCRIPT missing"
   exit 1
@@ -69,6 +117,7 @@ if [ -n "$MIGRATE_FROM" ]; then
 fi
 
 log "Invoking EvoRuntime orchestrator"
+"$PY_ENV" "$LOCAL_DIR/$RUNTIME_SCRIPT_REL" --environment termux --log-file "$LOG_FILE"
 "$PY_ENV" "$RUNTIME_SCRIPT" --environment termux --log-file "$LOG_FILE"
 STATUS=$?
 if [ $STATUS -ne 0 ]; then

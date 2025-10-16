@@ -126,6 +126,9 @@ to match the device topology.
 > under `/storage/emulated/0/…`, you can keep the old path in place. The runtime
 > will migrate it into `$HOME/evopyramid-ai` automatically on the next boot.
 
+📘 Подробная инструкция доступна в
+[`docs/Termux_Runtime_Quickstart.md`](../docs/Termux_Runtime_Quickstart.md).
+
 ## `termux_evocore_sync.sh`
 
 Manages manual synchronisation rituals between a Termux device and EvoCore. It
