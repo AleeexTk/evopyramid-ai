@@ -118,6 +118,27 @@ lineages:
       - "Chronos"
       - "Kairos"
 
+  - id: "spartan_resource_matrix"
+    name: "Evo Spartan Resource Matrix"
+    tier: "Structural"
+    parent: "manifests"
+    anchor: "manifests/EVO_RESOURCE_MATRIX.yaml"
+    description: |
+      Canonical ledger capturing the zero-billing ecosystem that powers Evo on
+      Samsung Termux, manual GitHub sync, and opportunistic API mirrors. Defines
+      Reflexive Aggression Mode safeguards and detox rituals for temporary
+      bridges.
+    doc_links:
+      - "docs/EVO_RESILIENCE_THEORY.md"
+      - "docs/ARCHITECTURE.md"
+    sync_references:
+      - "EVO_SYNC_MANIFEST.yaml::agents.resource_matrix"
+    status: "active"
+    tags:
+      - "Chronos"
+      - "Logos"
+      - "Kairos"
+
 notes:
   - "Every new subsystem must declare lineage here to avoid architectural orphans."
   - "Tags map layers of the Chronos/Kairos/Logos triad for rapid orientation."
