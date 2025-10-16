@@ -216,6 +216,25 @@ lineages:
       - "Kairos"
       - "Logos"
 
+  - id: "evoruntime_termux_adapter"
+    name: "EvoRuntime Termux Adapter"
+    tier: "Structural"
+    parent: "core/runtime"
+    anchor: "core/runtime/main.py"
+    description: |
+      Termux-aware runtime orchestrator that migrates legacy clones, registers
+      git safe directories, and launches EvoPyramid modules under wake-lock
+      protection via the Termux adapter abstraction.
+    doc_links:
+      - "docs/Termux_Runtime_Integration.md"
+      - "scripts/termux_boot_autostart.sh"
+    sync_references:
+      - "EVO_SYNC_MANIFEST.yaml::agents.evo_local"
+    status: "active"
+    tags:
+      - "Chronos"
+      - "Kairos"
+
 notes:
   - "Every new subsystem must declare lineage here to avoid architectural orphans."
   - "Tags map layers of the Chronos/Kairos/Logos triad for rapid orientation."
