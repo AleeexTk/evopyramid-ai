@@ -4,7 +4,7 @@
 # ================================================
 
 version: "1.0.Ω"
-updated: "2025-10-14T00:00:00Z"
+updated: "2025-10-17T00:00:00Z"
 architect: "EvoCodex"
 
 lineages:
@@ -99,6 +99,44 @@ lineages:
     tags:
       - "Chronos"
       - "Logos"
+
+  - id: "evolocal_capability_matrix"
+    name: "EvoLocal Capability Expansion"
+    tier: "Syntonic"
+    parent: "manifests"
+    anchor: "manifests/EVO_LOCAL_CAPABILITY.yaml"
+    description: |
+      Canonical register of the six EvoLocal strengths that emerge when EvoPyramid
+      breathes inside the Samsung A24 Termux environment, linking autonomy,
+      coherence, efficiency, chaos archiving, EvoSelf cycles, and symbolic awareness.
+    doc_links:
+      - "manifests/EVO_LOCAL_MODE.yaml"
+      - "manifests/EVO_EVOPYRAMID_API.yaml"
+    sync_references:
+      - "EVO_SYNC_MANIFEST.yaml::agents.evo_local"
+    status: "active"
+    tags:
+      - "Kairos"
+      - "Syntonic"
+
+  - id: "evo_reflex_learning"
+    name: "Evo Reflex Learning Protocol"
+    tier: "Cognitive"
+    parent: "manifests"
+    anchor: "manifests/EVO_REFLEX_LEARNING.yaml"
+    description: |
+      Reflexive conflict assimilation engine that pauses colliding Termux processes,
+      extracts reusable behavior, and reintegrates the refined logic into the EvoCanon
+      so the architecture gains resilience mid-execution.
+    doc_links:
+      - "manifests/EVO_LOCAL_MODE.yaml"
+      - "manifests/EVO_LOCAL_CAPABILITY.yaml"
+    sync_references:
+      - "EVO_SYNC_MANIFEST.yaml::agents.evo_reflex_learning"
+    status: "active"
+    tags:
+      - "Chronos"
+      - "Kairos"
 
   - id: "evofinart_local_space"
     name: "EvoFinArt Local Integration Space"

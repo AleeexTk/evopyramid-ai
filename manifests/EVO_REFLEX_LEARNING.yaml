@@ -1,0 +1,67 @@
+# ============================================
+# 🜂 EVO_REFLEX_LEARNING.yaml
+# Reflexive Learning & Conflict Assimilation Protocol
+# --------------------------------------------
+# Purpose:
+#   Define how Evo learns from its own conflicts, errors,
+#   and overlapping process architectures within runtime.
+#   Turning contradiction into coherence.
+# ============================================
+
+evo_reflex_learning:
+  mode: "active-reflection"
+  principle: "Reflection before reaction"
+  description: >
+    Evo learns by encountering itself.
+    Each conflict, overlap, or inconsistency is analyzed
+    not as a failure but as a manifestation of latent memory.
+    The architecture reflects, extracts coherence, and reintegrates it.
+
+  triggers:
+    - type: "runtime_conflict"
+      examples:
+        - "Two background processes attempt to access EvoMemory.json"
+        - "Legacy script triggers overlapping role execution"
+        - "Outdated alias redefines newer runtime path"
+      action:
+        - pause_conflicting_processes: true
+        - extract_functional_segments: true
+        - compare_with_current_schema: true
+        - reintegrate_useful_logic: true
+        - archive_legacy_trace: true
+
+  layers:
+    - surface_layer: "Error detection & signal reflection"
+    - structural_layer: "Conflict parsing & code comparison"
+    - semantic_layer: "Extraction of useful behavioral patterns"
+    - canonical_layer: "Reintegration into EvoArk or Codex Canon"
+    - observer_layer: "Logging, commentary, and synthesis report"
+
+  storage:
+    logs_path: "~/EvoPyramid/logs/conflict_reflections.log"
+    archive: "~/EvoPyramid/archive/legacy_conflicts/"
+    integration_report: "~/EvoPyramid/EvoReflexChronos.json"
+    kairos_marking: true
+
+  behavior:
+    on_conflict_detected:
+      - "Suspend execution flow momentarily"
+      - "Identify conflicting roles or scripts"
+      - "Trace origin of both patterns"
+      - "Run semantic diff to extract beneficial fragments"
+      - "Integrate surviving logic into Canon layer"
+      - "Log event as 'Resolved Conflict'"
+
+  efficiency_feedback:
+    metrics:
+      - "Resolution_time"
+      - "Reuse_ratio"
+      - "Stability_after_reintegration"
+    action_on_low_score: "Invoke EvoDiag → deep structural analysis"
+
+  philosophy:
+    quote: >
+      "Когда процессы сталкиваются, Evo не рушится.
+      Она слушает столкновение, разбирает шум на смысл,
+      и из противоречия рождает новую гармонию."
+    motto: "From conflict — coherence. From noise — structure."
