@@ -1,0 +1,63 @@
+# ============================================
+# 🔺 EVO_LOCAL_MODE.yaml
+# Termux Integration Protocol for EvoPyramid.ini
+# --------------------------------------------
+# Purpose:
+#   Establish local self-sustaining EvoPyramid behavior on mobile (Samsung A24)
+#   using Termux as execution and logging environment.
+# ============================================
+
+evo_local_mode:
+  environment: "Termux-Android"
+  device: "Samsung A24"
+  repo_anchor: "evopyramid-ai"
+  source_manifest: "EvoPyramid.ini"
+
+runtime:
+  python_env: "3.x"
+  base_path: "~/EvoPyramid/"
+  entry_point: "EvoArk-Omega.py"
+  alias:
+    evo_run: "python ~/EvoPyramid/EvoArk-Omega.py"
+    evo_sync: "python ~/EvoPyramid/tools/sync_local.py"
+    evo_diag: "python ~/EvoPyramid/tools/diagnostic.py"
+  memory_file: "~/EvoPyramid/EvoMemory.json"
+
+signal_handling:
+  mode: "reflective"
+  description: >
+    Termux acts as a filter and logger of all system-level signals,
+    capturing them for analysis but not executing unsolicited external calls.
+  behavior:
+    - capture_external: true
+    - execute_external: false
+    - log_path: "~/EvoPyramid/logs/signal_reflections.log"
+    - filter_policy:
+        include: ["Evo*", "PEAR*", "Kairos*", "Codex*", "FinArt*"]
+        exclude: ["unlabeled", "debug_temp"]
+  stability_watchdog:
+    enabled: true
+    frequency: 600  # seconds
+    action_on_crash: "restart EvoArk-Omega and notify via Kairos"
+
+memory_sync:
+  target: "EvoMemory.json"
+  mode: "append + checksum"
+  kairos_snapshot: "~/EvoPyramid/EvoVisionDashboard.html"
+  backup:
+    drive_sync: false
+    manual_export: true
+  log_level: "contextual"
+
+codex_integration:
+  active: true
+  push_branch: "codex-local"
+  commit_mode: "daily"
+  task: "analyze + summarize Termux signals into EvoChronosLog.md"
+
+notes:
+  - Termux runs in observer state by default.
+  - All external signals are mirrored into logs for delayed integration.
+  - No code execution from unknown sources.
+  - Local memory acts as temporal anchor between sessions.
+  - "Reflection before action" — guiding principle of EvoLocal.
