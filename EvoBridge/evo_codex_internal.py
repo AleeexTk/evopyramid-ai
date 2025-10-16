@@ -31,16 +31,48 @@ def apply_ruleset(path: Path) -> None:
     with path.open("r", encoding="utf-8") as handle:
         data: Dict[str, Any] = yaml.safe_load(handle)
 
-    url = f"{GITHUB_API_URL}/repos/{repository}/rulesets"
+    if not isinstance(data, dict):
+        raise ValueError("Ruleset file must define a mapping at the top level")
+
+    ruleset_name = data.get("name")
+    if not ruleset_name:
+        raise ValueError("Ruleset definition must include a 'name' field")
+
+    base_url = f"{GITHUB_API_URL}/repos/{repository}/rulesets"
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",
     }
 
-    response = requests.post(url, headers=headers, json=data, timeout=30)
-    if response.status_code >= 300:
+    lookup_response = requests.get(base_url, headers=headers, timeout=30)
+    if lookup_response.status_code >= 300:
         raise RuntimeError(
-            "Failed to apply ruleset: "
+            "Failed to fetch existing rulesets: "
+            f"{lookup_response.status_code} {lookup_response.text}"
+        )
+
+    payload = lookup_response.json()
+    if isinstance(payload, dict) and "rulesets" in payload:
+        existing_rulesets = payload.get("rulesets", [])
+    else:
+        existing_rulesets = payload or []
+
+    existing_id = None
+    for ruleset in existing_rulesets:
+        if isinstance(ruleset, dict) and ruleset.get("name") == ruleset_name:
+            existing_id = ruleset.get("id")
+            break
+
+    if existing_id:
+        url = f"{base_url}/{existing_id}"
+        response = requests.patch(url, headers=headers, json=data, timeout=30)
+    else:
+        response = requests.post(base_url, headers=headers, json=data, timeout=30)
+
+    if response.status_code >= 300:
+        action = "update" if existing_id else "create"
+        raise RuntimeError(
+            f"Failed to {action} ruleset: "
             f"{response.status_code} {response.text}"
         )
 
