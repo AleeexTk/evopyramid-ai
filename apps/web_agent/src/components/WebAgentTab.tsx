@@ -10,6 +10,7 @@ interface ReachabilityFeedback {
   tone: ReachabilityTone;
   message: string;
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
 import type { AgentMessage, WebAgentTabState } from '../types';
 
 type TabStatus = 'idle' | 'loading';
@@ -92,9 +93,6 @@ const isValidHttpUrl = (candidate: string): boolean => {
       ok: false,
       error: 'Неверный формат URL. Проверьте адрес и попробуйте снова.',
     };
-    return url.protocol === 'http:' || url.protocol === 'https:';
-  } catch (error) {
-    return false;
   }
 };
 
@@ -297,13 +295,11 @@ export function WebAgentTab({
     onNavigate(tab.id, result.value);
     onUpdateTab(tab.id, { error: undefined, url: result.value });
     onNavigate(tab.id, result.value);
-    onUpdateTab(tab.id, { error: undefined, url: candidate });
-    onNavigate(tab.id, candidate);
     setTimeout(() => setStatus('idle'), 250);
   }, [addressValue, onNavigate, onUpdateTab, tab.id]);
 
   const handleSubmit = useCallback(
-    (event: React.FormEvent<HTMLFormElement>) => {
+    (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       handleNavigate();
     },

@@ -206,6 +206,25 @@ agents:
       - "Валидация синтаксиса через PyYAML"
     sync_tag: "Chronos"
 
+  - id: resource_matrix
+    type: "Resource-Doctrine"
+    description: |
+      Регистр автономной энергетики Evo. Описывает Termux-реактор, ручной GitHub
+      канон и временные мосты через `manifests/EVO_RESOURCE_MATRIX.yaml`, а также
+      трактат `docs/EVO_RESILIENCE_THEORY.md`.
+    rituals:
+      - "Evo Resource Scan"
+      - "Resource Efficiency Pulse"
+      - "Synergy Detox"
+    metrics:
+      - "resource_efficiency"
+      - "latency_ms"
+      - "temperature_c"
+    guardians:
+      - "Trinity Observer"
+      - "Codex Scientist"
+    sync_tag: "Kairos"
+
   - id: alex_creator_profile
     type: "Human-Architect"
     description: |
