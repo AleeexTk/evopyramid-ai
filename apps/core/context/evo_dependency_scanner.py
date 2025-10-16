@@ -516,24 +516,93 @@ def annotate_copy(source_path: Path, destination: Path, source_label: str) -> No
         target.write(original.read())
 
 
-def process_priority_txt(
+def process_priority_txt_with_namespace(
     roots: List[Path],
     repo_root: Path,
     skip_paths: Iterable[Path],
 ) -> list[dict]:
+    """Stage priority text files while preserving per-root namespaces."""
+
     ingest_dirs = prepare_ingest_dirs(repo_root)
     priority_docs: list[dict] = []
 
+    repo_root_resolved = repo_root.resolve()
+    root_tokens: dict[Path, str] = {}
+
+    for index, base in enumerate(roots):
+        resolved_base = base.resolve()
+        if resolved_base in root_tokens:
+            continue
+
+        try:
+            relative_label = resolved_base.relative_to(repo_root_resolved).as_posix()
+            if not relative_label:
+                relative_label = "repo_root"
+        except ValueError:
+            relative_label = resolved_base.name or "root"
+
+        sanitized = re.sub(r"[^A-Za-z0-9._-]", "_", relative_label)
+        root_tokens[resolved_base] = f"{index:02d}_{sanitized}"
+
     for base in roots:
+        base_resolved = base.resolve()
+        root_token = root_tokens.get(base_resolved)
+        if not root_token:
+            continue
+
         for file_path in walk_files(base, skip_paths=skip_paths):
             if file_path.suffix.lower() not in PRIORITY_TXT_EXT:
                 continue
             if is_relative_to(file_path, ingest_dirs["root"]):
                 continue
-                "kinds": sorted({entry["kind"] for entry in group}),
-            }
-        )
-    return summary
+
+            try:
+                size_kb = os.path.getsize(file_path) / 1024
+            except OSError:
+                continue
+
+            if size_kb < PRIORITY_THRESHOLD_KB:
+                continue
+
+            try:
+                relative_path = file_path.resolve().relative_to(base_resolved)
+            except Exception:
+                relative_path = Path(file_path.name)
+
+            staged_relative = Path(root_token) / relative_path
+
+            raw_dest = ingest_dirs["pending_raw"] / staged_relative
+            raw_dest.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                copy2(file_path, raw_dest)
+            except Exception:
+                continue
+
+            annotated_name = relative_path.stem + "_annotated" + relative_path.suffix
+            annotated_path = staged_relative.with_name(annotated_name)
+            annot_dest = ingest_dirs["pending_annot"] / annotated_path
+            annot_dest.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                annotate_copy(file_path, annot_dest, source_label=str(staged_relative))
+            except Exception:
+                try:
+                    raw_dest.unlink(missing_ok=True)
+                except Exception:
+                    pass
+                continue
+
+            priority_docs.append(
+                {
+                    "original": str(file_path.resolve()),
+                    "relative_to_root": rel_to(base, file_path),
+                    "staged_relative": str(staged_relative),
+                    "size_kb": round(size_kb, 2),
+                    "raw_copy": str(raw_dest.resolve()),
+                    "annotated_copy": str(annot_dest.resolve()),
+                }
+            )
+
+    return priority_docs
 
 
 def prepare_ingest_dirs() -> None:
@@ -805,11 +874,12 @@ def write_outputs(out_dir: Path, payload: Dict[str, object]) -> None:
     report_lines.append("High-priority .txt documents (>10 KB):")
     for document in payload.get("priority_docs", [])[:50]:
         report_lines.append(
-            "  • {path}  ({size} KB)  → raw={raw} annotated={annot}".format(
-                path=document["path"],
-                size=document["size_kb"],
-                raw=document["raw_copy"],
-                annot=document["annotated_copy"],
+            "  • {source} (staged: {staged})  ({size} KB)  → raw={raw} annotated={annot}".format(
+                source=document.get("relative_to_root") or document.get("original"),
+                staged=document.get("staged_relative") or document.get("relative_to_root"),
+                size=document.get("size_kb", "?"),
+                raw=document.get("raw_copy", "?"),
+                annot=document.get("annotated_copy", "?"),
             )
         )
     with (out_dir / "evo_dependency_report.log").open("w", encoding="utf-8") as report_file:
@@ -833,7 +903,9 @@ def main(argv: List[str] | None = None) -> None:
     dependency_data = build_dependency_graph(roots, skip_paths=skip_paths)
     magnets = rank_magnets(dependency_data["graph"], dependency_data["reverse"])
     artifact_waves = correlate_artifacts(dependency_data["artifacts"], window_sec=args.window)
-    priority_docs = process_priority_txt(roots, repo_root, skip_paths=skip_paths)
+    priority_docs = process_priority_txt_with_namespace(
+        roots, repo_root, skip_paths=skip_paths
+    )
 
     payload = {
     dependency_data = build_dependency_graph(roots)
@@ -877,7 +949,7 @@ if __name__ == "__main__":
     data = build_dependency_graph(roots)
     magnets = rank_magnets(data["graph"], data["reverse"])
     artifact_waves = correlate_artifacts(data["artifacts"], window_sec=args.window)
-    priority_docs = process_priority_txt(roots)
+    priority_docs = process_priority_txt_with_namespace(roots, repo_root, skip_paths=[])
 
     payload = {
         "timestamp": datetime.now().isoformat(),
