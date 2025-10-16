@@ -6,13 +6,69 @@ import argparse
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict
+from collections.abc import Iterable
+from typing import Any, Dict, List, Optional
 
 import requests
 import yaml
 
 
 GITHUB_API_URL = "https://api.github.com"
+
+
+def _list_rulesets(base_url: str, headers: Dict[str, str]) -> List[Dict[str, Any]]:
+    """Return all existing rulesets for the repository."""
+
+    rulesets: List[Dict[str, Any]] = []
+    page = 1
+
+    while True:
+        response = requests.get(
+            base_url,
+            headers=headers,
+            params={"per_page": 100, "page": page},
+            timeout=30,
+        )
+        if response.status_code >= 300:
+            raise RuntimeError(
+                "Failed to fetch existing rulesets: "
+                f"{response.status_code} {response.text}"
+            )
+
+        payload = response.json()
+        if isinstance(payload, dict) and "rulesets" in payload:
+            batch: Iterable[Any] = payload.get("rulesets", [])
+        else:
+            batch = payload or []
+
+        if not isinstance(batch, Iterable):
+            raise RuntimeError(
+                "Unexpected response structure when listing rulesets: "
+                f"{payload}"
+            )
+
+        batch_list = [item for item in batch if isinstance(item, dict)]
+        rulesets.extend(batch_list)
+
+        if len(batch_list) < 100:
+            break
+
+        page += 1
+
+    return rulesets
+
+
+def _find_ruleset_id(rulesets: Iterable[Dict[str, Any]], name: str) -> Optional[int]:
+    """Locate a ruleset's identifier by name."""
+
+    for ruleset in rulesets:
+        if not isinstance(ruleset, dict):
+            continue
+        if ruleset.get("name") == name and "id" in ruleset:
+            identifier = ruleset["id"]
+            if isinstance(identifier, int):
+                return identifier
+    return None
 
 
 def apply_ruleset(path: Path) -> None:
@@ -44,28 +100,15 @@ def apply_ruleset(path: Path) -> None:
         "Accept": "application/vnd.github+json",
     }
 
-    lookup_response = requests.get(base_url, headers=headers, timeout=30)
-    if lookup_response.status_code >= 300:
-        raise RuntimeError(
-            "Failed to fetch existing rulesets: "
-            f"{lookup_response.status_code} {lookup_response.text}"
-        )
-
-    payload = lookup_response.json()
-    if isinstance(payload, dict) and "rulesets" in payload:
-        existing_rulesets = payload.get("rulesets", [])
-    else:
-        existing_rulesets = payload or []
-
-    existing_id = None
-    for ruleset in existing_rulesets:
-        if isinstance(ruleset, dict) and ruleset.get("name") == ruleset_name:
-            existing_id = ruleset.get("id")
-            break
+    existing_rulesets = _list_rulesets(base_url, headers)
+    existing_id = _find_ruleset_id(existing_rulesets, ruleset_name)
 
     if existing_id:
         url = f"{base_url}/{existing_id}"
         response = requests.patch(url, headers=headers, json=data, timeout=30)
+        if response.status_code == 404:
+            # Ruleset was deleted after lookup. Attempt to create it afresh.
+            response = requests.post(base_url, headers=headers, json=data, timeout=30)
     else:
         response = requests.post(base_url, headers=headers, json=data, timeout=30)
 
