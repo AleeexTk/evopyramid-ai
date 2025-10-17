@@ -63,6 +63,8 @@ repository root.
   Cloud Deploy (рендер, apply и release) находятся в каталоге `clouddeploy/`, `scripts/render_clouddeploy.sh`
   и `skaffold.yaml`, которые автоматически исполняются из `cloudbuild.yaml`. Для ручного запуска
   полного Cloud Build цикла добавлен `scripts/trigger_cloud_build.sh`, прокидывающий необходимые
+  substitutions, поддерживающий активацию сервисного аккаунта по ключу и подтверждающий прохождение
+  Cloud Deploy стейджей.
   substitutions и подтверждающий прохождение Cloud Deploy стейджей.
   и `skaffold.yaml`, которые автоматически исполняются из `cloudbuild.yaml`.
   Cloud Deploy находятся в каталоге `clouddeploy/` и `skaffold.yaml`.

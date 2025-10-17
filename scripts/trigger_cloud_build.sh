@@ -14,6 +14,10 @@ set -euo pipefail
 #   PRODUCTION_SERVICE - Cloud Run production service name (default: evopyramid-api)
 #   IMAGE_TAG       - Tag to apply to the image / release (default: current git commit SHA or timestamp)
 #   DRY_RUN         - When set to 1, prints the resolved gcloud command without executing it.
+#   SERVICE_ACCOUNT_KEY_FILE - Path to a JSON service account key. When provided (and DRY_RUN is not set),
+#                              the script will authenticate the key before triggering the build.
+#   SERVICE_ACCOUNT_KEY_JSON - Inline JSON service account key contents. Useful in CI contexts.
+#   SERVICE_ACCOUNT_KEY_B64  - Base64 encoded JSON service account key. Alternative to *_JSON.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
@@ -43,6 +47,9 @@ if [[ "${DRY_RUN:-0}" != "0" ]]; then
   echo "[cloudbuild] DRY_RUN=1 — showing command only"
 fi
 
+GCLOUD_BIN="${GCLOUD_BIN:-gcloud}"
+
+if ! command -v "$GCLOUD_BIN" >/dev/null 2>&1; then
 if ! command -v gcloud >/dev/null 2>&1; then
   echo "[cloudbuild] gcloud CLI is required to trigger Cloud Build" >&2
   if [[ "${DRY_RUN:-0}" == "0" ]]; then
@@ -50,6 +57,58 @@ if ! command -v gcloud >/dev/null 2>&1; then
   fi
 fi
 
+TEMP_KEY_FILE=""
+cleanup() {
+  if [[ -n "$TEMP_KEY_FILE" && -f "$TEMP_KEY_FILE" ]]; then
+    rm -f "$TEMP_KEY_FILE"
+  fi
+}
+trap cleanup EXIT
+
+resolve_service_account_key() {
+  if [[ -n "${SERVICE_ACCOUNT_KEY_FILE:-}" ]]; then
+    echo "$SERVICE_ACCOUNT_KEY_FILE"
+    return 0
+  fi
+
+  if [[ -n "${SERVICE_ACCOUNT_KEY_JSON:-}" ]]; then
+    TEMP_KEY_FILE="$(mktemp)"
+    printf '%s' "${SERVICE_ACCOUNT_KEY_JSON}" >"$TEMP_KEY_FILE"
+    echo "$TEMP_KEY_FILE"
+    return 0
+  fi
+
+  if [[ -n "${SERVICE_ACCOUNT_KEY_B64:-}" ]]; then
+    if ! command -v base64 >/dev/null 2>&1; then
+      echo "[cloudbuild] base64 command not available to decode SERVICE_ACCOUNT_KEY_B64" >&2
+      return 1
+    fi
+    TEMP_KEY_FILE="$(mktemp)"
+    printf '%s' "${SERVICE_ACCOUNT_KEY_B64}" | base64 --decode >"$TEMP_KEY_FILE"
+    echo "$TEMP_KEY_FILE"
+    return 0
+  fi
+
+  return 1
+}
+
+if [[ "${DRY_RUN:-0}" == "0" ]]; then
+  KEY_FILE=""
+  if KEY_FILE="$(resolve_service_account_key)"; then
+    if [[ -n "$KEY_FILE" ]]; then
+      echo "[cloudbuild] Activating service account from ${KEY_FILE}" >&2
+      "$GCLOUD_BIN" auth activate-service-account --key-file="$KEY_FILE" >/dev/null
+    fi
+  fi
+
+  if ! "$GCLOUD_BIN" auth list --format='value(account)' | grep -q '.'; then
+    echo "[cloudbuild] No active gcloud account detected. Run 'gcloud auth login' or 'gcloud auth activate-service-account' first." >&2
+    exit 1
+  fi
+fi
+
+GCLOUD_CMD=(
+  "$GCLOUD_BIN" builds submit
 GCLOUD_CMD=(
   gcloud builds submit
   "--project=${PROJECT_ID}"

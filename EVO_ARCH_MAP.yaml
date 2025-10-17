@@ -109,6 +109,9 @@ lineages:
       Progressive delivery harness that renders Cloud Deploy targets and the delivery
       pipeline for the EvoPyramid API, linking Cloud Build, Skaffold, and Cloud Run
       promotions under the PACE ritual. Cloud Build now renders the manifest and applies
+      the pipeline before every release to guarantee idempotent promotions, while the
+      trigger helper can bootstrap authentication via service account keys for end-to-end
+      rehearsals.
       the pipeline before every release to guarantee idempotent promotions.
       promotions under the PACE ritual.
     doc_links:
