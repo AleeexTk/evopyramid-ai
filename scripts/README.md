@@ -63,3 +63,56 @@ Invoke from a Termux shell:
 ```bash
 bash scripts/start_termux.sh
 ```
+
+## `termux_boot_autostart.sh`
+
+Automates Termux boot synchronisation for EvoPyramid nodes that rely on the
+Termux:Boot plugin. The script now delegates orchestration to the Python
+runtime defined in `core/runtime/main.py`, ensuring that Termux is treated as a
+first-class execution surface inside the architecture.
+
+1. Stores the repository in `$HOME/evopyramid-ai` by default, aligning with
+   Termux best practices to avoid `detected dubious ownership` errors on
+   external storage. Override `EVO_PARENT_DIR` or `LOCAL_DIR` if you intentionally
+   host the repo elsewhere.
+2. Exports `EVO_RUNTIME_*` variables so the Python runtime can manage git
+   synchronisation, wake locks, and module execution in a single, auditable
+   flow.
+3. Detects legacy clones under `/storage/emulated/0/EVO_LOCAL/…` or `/sdcard/…`
+   and passes those paths to the runtime for automated migration into Termux's
+   home directory.
+4. Invokes `core/runtime/main.py --environment termux`, writing consolidated
+   logs into `${EVO_PARENT_DIR}/logs/termux_boot/boot-<timestamp>.log` so Python
+   and shell stages share the same timeline.
+5. Leaves the launched module running in its own session so the Termux node can
+   continue executing EvoPyramid rituals after the boot script exits.
+
+Place the script under `~/.termux/boot/start-evopyramid.sh`, grant execute
+permissions, and adjust environment variables (`EVO_PARENT_DIR`, `PY_ENV`, etc.)
+to match the device topology.
+
+> 🔁 **Migrating from external storage**: If you previously cloned the project
+> under `/storage/emulated/0/…`, you can keep the old path in place. The runtime
+> will migrate it into `$HOME/evopyramid-ai` automatically on the next boot.
+
+📘 Подробная инструкция доступна в
+[`docs/Termux_Runtime_Quickstart.md`](../docs/Termux_Runtime_Quickstart.md).
+
+## `termux_evocore_sync.sh`
+
+Manages manual synchronisation rituals between a Termux device and EvoCore. It
+can be used when you need to trigger synchronisation outside of the boot
+sequence or troubleshoot wake-lock behaviour.
+
+```bash
+bash scripts/termux_evocore_sync.sh
+```
+
+## `local_sync_manager.py`
+
+Minimal placeholder script reserved for future EvoLocal synchronisation logic.
+It currently emits a no-op message.
+
+```bash
+python scripts/local_sync_manager.py
+```
