@@ -110,6 +110,37 @@ GKE полезен, если планируете несколько микро�
 2. Настройте триггер на GitHub. После каждого коммита образ будет опубликован автоматически.
 3. Дополнительно вызовите `gcloud run deploy` через отдельный шаг или Cloud Deploy.
 
+### 5.1 Cloud Deploy — автоматизация шага Elevate
+
+> ♾️ **PACE Elevate:** когда образ готов и тесты пройдены, Cloud Deploy поднимает релиз из стадии Chronos (коммит) в Kairos (рабочая среда), сохраняя трассируемость.
+
+1. Отрендерите pipeline под ваш проект. Шаблон хранится в `clouddeploy/templates/delivery-pipeline.yaml.tpl` и рендерится скриптом:
+   ```bash
+   PROJECT_ID=your-project-id \
+   REGION=us-central1 \
+   scripts/render_clouddeploy.sh
+   ```
+   Результат появится в `clouddeploy/rendered/delivery-pipeline.yaml`.
+2. Примените pipeline и цели окружений:
+   ```bash
+   gcloud deploy apply \
+       --file clouddeploy/rendered/delivery-pipeline.yaml \
+       --region=${REGION} \
+       --project=${PROJECT_ID}
+   ```
+3. Подготовьте Cloud Build trigger на `cloudbuild.yaml`. Он собирает образ, публикует его в Artifact Registry и создаёт релиз через Cloud Deploy, используя `skaffold.yaml` для маппинга образа к сервисам Cloud Run.
+4. Для ручной проверки можно вызвать ту же команду локально:
+   ```bash
+   gcloud deploy releases create evopyramid-api-$(date +%Y%m%d%H%M%S) \
+       --region=${REGION} \
+       --project=${PROJECT_ID} \
+       --delivery-pipeline=evopyramid-api \
+       --skaffold-file=skaffold.yaml \
+       --images=evopyramid-api=${REGION}-docker.pkg.dev/${PROJECT_ID}/evopyramid-repo/evopyramid-api:$(git rev-parse HEAD)
+   ```
+
+Все параметры по умолчанию (регион, имена сервисов) задаются в `skaffold.yaml` и могут быть переопределены через профили `staging` и `production`.
+
 ## 6. Безопасность и секреты
 
 - Используйте [Secret Manager](https://cloud.google.com/secret-manager) и задавайте переменные через `--set-secrets` в Cloud Run.

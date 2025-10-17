@@ -59,6 +59,8 @@ repository root.
 - Windows onboarding instructions for EvoFinArt are available in
   `docs/guides/EvoFinArt_Windows_Installation_RU.md` (Russian).
 - Google Cloud deployment pathway for EvoPyramid-AI lives in
+  `docs/guides/EvoPyramid_Google_Cloud_Deployment.md` (Russian), а исполняемые артефакты
+  Cloud Deploy находятся в каталоге `clouddeploy/` и `skaffold.yaml`.
   `docs/guides/EvoPyramid_Google_Cloud_Deployment.md` (Russian).
 - The initial blueprint for the EvoFinArt chat interface prototype is tracked in
   `docs/blueprints/EvoFinArt_Chat_Interface_Prototype.md`.
