@@ -81,6 +81,8 @@ directives:
     pipeline:
       - "scripts/render_clouddeploy.sh генерирует delivery-pipeline.yaml (параметризуемые сервисы)"
       - "cloudbuild.yaml автоматически применяет pipeline через gcloud deploy apply"
+      - "scripts/render_clouddeploy.sh генерирует delivery-pipeline.yaml"
+      - "gcloud deploy apply разворачивает pipeline и цели"
       - "cloudbuild.yaml запускает сборку и создание релиза"
       - "Cloud Deploy применяет skaffold.yaml профили"
     tracking_fields:

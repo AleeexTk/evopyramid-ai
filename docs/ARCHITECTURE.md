@@ -96,6 +96,7 @@ the active canon.
 - `clouddeploy/templates/delivery-pipeline.yaml.tpl` + `scripts/render_clouddeploy.sh` – Cloud Deploy
   harness that renders the progressive delivery pipeline for the API using the PACE ritual; Cloud Build now
   renders and applies the pipeline before creating each release.
+  harness that renders the progressive delivery pipeline for the API using the PACE ritual.
 
 ## EvoCodex Governance Bridge
 
