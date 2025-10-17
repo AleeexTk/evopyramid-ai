@@ -311,4 +311,18 @@ log "Launching EvoPyramid runtime module $PYTHON_ENTRYPOINT"
 nohup "$RUNTIME_BIN" -m "$PYTHON_ENTRYPOINT" >>"$LOG_FILE" 2>&1 &
 log "Runtime started with PID $!"
 
+API_MODULE="${API_MODULE:-apps.api.main:app}"
+API_HOST="${API_HOST:-127.0.0.1}"
+API_PORT="${API_PORT:-8000}"
+API_LOG_FILE="${API_LOG_FILE:-$LOG_DIR/api-server.log}"
+if pgrep -f "uvicorn ${API_MODULE}" >/dev/null 2>&1; then
+  log "EvoPyramid API already running"
+else
+  log "Starting EvoPyramid API server"
+  nohup "$RUNTIME_BIN" -m uvicorn "$API_MODULE" --host "$API_HOST" --port "$API_PORT" >>"$API_LOG_FILE" 2>&1 &
+  API_PID=$!
+  printf "%s\n" "$API_PID" > /tmp/evo_api.pid
+  log "EvoPyramid API started with PID: $API_PID"
+fi
+
 log "EvoPyramid boot sync complete"
