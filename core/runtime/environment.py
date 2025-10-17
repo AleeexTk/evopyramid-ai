@@ -108,6 +108,59 @@ class RuntimeAdapter(ABC):
             self.config.git_remote,
             self.config.git_branch,
         ], cwd=repo, env=env)
+        def parse_ahead(stdout: str) -> int:
+            stripped = stdout.strip()
+            if not stripped:
+                return 0
+            parts = stripped.split()
+            if len(parts) < 2:
+                self.logger.warning("Unexpected rev-list output: %s", stripped)
+                return 0
+            try:
+                _, ahead = int(parts[0]), int(parts[1])
+            except ValueError:
+                self.logger.warning("Unexpected rev-list output: %s", stripped)
+                return 0
+            return ahead
+
+        divergence = self._run_command([
+            "git",
+            "rev-list",
+            "--left-right",
+            "--count",
+            f"{self.config.git_remote}/{self.config.git_branch}...HEAD",
+        ], cwd=repo, env=env)
+        ahead_count = parse_ahead(divergence.stdout)
+        if ahead_count > 0:
+            message = (
+                f"Detected {ahead_count} local commits ahead of "
+                f"{self.config.git_remote}/{self.config.git_branch}"
+            )
+            if self.config.push_changes:
+                self.logger.info("%s – pushing before reset", message)
+                self._run_command([
+                    "git",
+                    "push",
+                    self.config.git_remote,
+                    f"HEAD:{self.config.git_branch}",
+                    "--force-with-lease",
+                ], cwd=repo, env=env)
+                divergence_after_push = self._run_command([
+                    "git",
+                    "rev-list",
+                    "--left-right",
+                    "--count",
+                    f"{self.config.git_remote}/{self.config.git_branch}...HEAD",
+                ], cwd=repo, env=env)
+                if parse_ahead(divergence_after_push.stdout) > 0:
+                    raise RuntimeAdapterError(
+                        "Unable to push local commits before reset; aborting"
+                    )
+            else:
+                raise RuntimeAdapterError(
+                    f"{message}. Configure push_changes to enable automatic pushes "
+                    "or synchronise manually."
+                )
         self._run_command([
             "git",
             "stash",
