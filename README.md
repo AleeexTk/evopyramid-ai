@@ -61,6 +61,9 @@ repository root.
 - Google Cloud deployment pathway for EvoPyramid-AI lives in
   `docs/guides/EvoPyramid_Google_Cloud_Deployment.md` (Russian), а исполняемые артефакты
   Cloud Deploy (рендер, apply и release) находятся в каталоге `clouddeploy/`, `scripts/render_clouddeploy.sh`
+  и `skaffold.yaml`, которые автоматически исполняются из `cloudbuild.yaml`. Для ручного запуска
+  полного Cloud Build цикла добавлен `scripts/trigger_cloud_build.sh`, прокидывающий необходимые
+  substitutions и подтверждающий прохождение Cloud Deploy стейджей.
   и `skaffold.yaml`, которые автоматически исполняются из `cloudbuild.yaml`.
   Cloud Deploy находятся в каталоге `clouddeploy/` и `skaffold.yaml`.
   `docs/guides/EvoPyramid_Google_Cloud_Deployment.md` (Russian).

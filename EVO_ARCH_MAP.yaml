@@ -115,6 +115,7 @@ lineages:
       - "docs/guides/EvoPyramid_Google_Cloud_Deployment.md"
       - "cloudbuild.yaml"
       - "skaffold.yaml"
+      - "scripts/trigger_cloud_build.sh"
     sync_references:
       - "EVO_SYNC_MANIFEST.yaml::directives[evo_cloud_deploy]"
     status: "active"

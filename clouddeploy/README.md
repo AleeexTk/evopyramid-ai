@@ -10,6 +10,7 @@ into an executable delivery pipeline.
 - `../skaffold.yaml` — Skaffold config consumed by Cloud Deploy when rendering releases.
 - `../cloudbuild.yaml` — Cloud Build definition that builds the API image and creates releases.
 - `../scripts/render_clouddeploy.sh` — helper that renders the pipeline template using environment variables (project, region, Cloud Run service names).
+- `../scripts/trigger_cloud_build.sh` — wraps `gcloud builds submit` with EvoPyramid defaults so the Cloud Build → Cloud Deploy promotion path can be exercised on demand.
 - `../scripts/render_clouddeploy.sh` — helper that renders the pipeline template using environment variables.
 
 ## Usage (PACE Elevate)
@@ -27,6 +28,16 @@ gcloud deploy apply \
     --region=${REGION} \
     --project=${PROJECT_ID}
 
+PROJECT_ID=${PROJECT_ID} \
+REGION=${REGION} \
+STAGING_SERVICE=${STAGING_SERVICE} \
+PRODUCTION_SERVICE=${PRODUCTION_SERVICE} \
+scripts/trigger_cloud_build.sh
+```
+
+Cloud Build triggers pointed at `cloudbuild.yaml` now render and apply the delivery pipeline automatically before creating a release, keeping manual invocations optional. The trigger script mirrors the same behaviour locally, ensuring production substitutions are validated before promoting a change.
+
+Custom Cloud Build substitutions `_STAGING_SERVICE` and `_PRODUCTION_SERVICE` mirror the environment variables, enabling per-environment overrides without editing the repository files.
 gcloud deploy releases create evopyramid-api-$(date +%Y%m%d%H%M%S) \
     --region=${REGION} \
     --project=${PROJECT_ID} \

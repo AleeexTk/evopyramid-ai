@@ -80,6 +80,8 @@ directives:
       Cloud Run сервисами (staging → production).
     pipeline:
       - "scripts/render_clouddeploy.sh генерирует delivery-pipeline.yaml (параметризуемые сервисы)"
+      - "scripts/trigger_cloud_build.sh запускает gcloud builds submit с продовыми substitutions"
+      - "cloudbuild.yaml автоматически применяет pipeline через gcloud deploy apply"
       - "cloudbuild.yaml автоматически применяет pipeline через gcloud deploy apply"
       - "scripts/render_clouddeploy.sh генерирует delivery-pipeline.yaml"
       - "gcloud deploy apply разворачивает pipeline и цели"
