@@ -1,0 +1,38 @@
+# Cloud Build pipeline that packages the EvoPyramid API image and triggers Cloud Deploy.
+substitutions:
+  _REGION: us-central1
+  _REPOSITORY: evopyramid-repo
+  _DELIVERY_PIPELINE: evopyramid-api
+steps:
+  - name: gcr.io/cloud-builders/docker
+    id: build-api-image
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        docker build \
+          -f docker/Dockerfile.api \
+          -t ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/evopyramid-api:$COMMIT_SHA \
+          .
+  - name: gcr.io/cloud-builders/docker
+    id: push-api-image
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/evopyramid-api:$COMMIT_SHA
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: create-cloud-deploy-release
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        gcloud deploy releases create evopyramid-api-$COMMIT_SHA \
+          --project=$PROJECT_ID \
+          --region=${_REGION} \
+          --delivery-pipeline=${_DELIVERY_PIPELINE} \
+          --skaffold-file=skaffold.yaml \
+          --images=evopyramid-api=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/evopyramid-api:$COMMIT_SHA \
+          --annotations=evopyramid.ai/pace=cloud \
+          --labels=app=evopyramid,env=cloud \
+          --description="Automated release from Cloud Build commit $COMMIT_SHA"
+options:
+  logging: CLOUD_LOGGING_ONLY
