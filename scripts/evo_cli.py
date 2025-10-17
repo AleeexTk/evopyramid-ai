@@ -1,9 +1,12 @@
 """Command-line client for interacting with EvoPyramid API modules."""
+#!/usr/bin/env python3
+"""Command-line interface for interacting with the EvoPyramid API."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import sys
 from typing import Any, Dict
 
 import requests
@@ -115,6 +118,8 @@ def main(argv: list[str] | None = None) -> int:
         print(
             "❌ EvoPyramid API не запущен. Запусти: python -m uvicorn apps.api.main:app --host 127.0.0.1 --port 8000",
         )
+    except requests.ConnectionError:
+        print("❌ EvoPyramid API не запущен. Запусти: python -m uvicorn apps.api.main:app --host 127.0.0.1 --port 8000")
         return 1
     except requests.RequestException as exc:
         print(f"❌ API request failed: {exc}")
