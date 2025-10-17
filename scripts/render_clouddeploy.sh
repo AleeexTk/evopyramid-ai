@@ -49,3 +49,6 @@ output_path = output_dir / "delivery-pipeline.yaml"
 output_path.write_text(rendered)
 print(f"Rendered Cloud Deploy pipeline to {output_path}")
 PY
+envsubst < "$TEMPLATE_DIR/delivery-pipeline.yaml.tpl" > "$OUTPUT_DIR/delivery-pipeline.yaml"
+
+echo "Rendered Cloud Deploy pipeline to $OUTPUT_DIR/delivery-pipeline.yaml"
