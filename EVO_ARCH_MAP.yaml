@@ -112,6 +112,8 @@ lineages:
       the pipeline before every release to guarantee idempotent promotions, while the
       trigger helper can bootstrap authentication via service account keys for end-to-end
       rehearsals.
+      the pipeline before every release to guarantee idempotent promotions.
+      promotions under the PACE ritual.
     doc_links:
       - "docs/guides/EvoPyramid_Google_Cloud_Deployment.md"
       - "cloudbuild.yaml"

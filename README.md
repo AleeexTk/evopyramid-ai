@@ -65,6 +65,10 @@ repository root.
   полного Cloud Build цикла добавлен `scripts/trigger_cloud_build.sh`, прокидывающий необходимые
   substitutions, поддерживающий активацию сервисного аккаунта по ключу и подтверждающий прохождение
   Cloud Deploy стейджей.
+  substitutions и подтверждающий прохождение Cloud Deploy стейджей.
+  и `skaffold.yaml`, которые автоматически исполняются из `cloudbuild.yaml`.
+  Cloud Deploy находятся в каталоге `clouddeploy/` и `skaffold.yaml`.
+  `docs/guides/EvoPyramid_Google_Cloud_Deployment.md` (Russian).
 - The initial blueprint for the EvoFinArt chat interface prototype is tracked in
   `docs/blueprints/EvoFinArt_Chat_Interface_Prototype.md`.
 - The Gemini bridge dedicated to EvoFinArt is documented in

@@ -82,6 +82,11 @@ directives:
       - "scripts/render_clouddeploy.sh генерирует delivery-pipeline.yaml (параметризуемые сервисы)"
       - "scripts/trigger_cloud_build.sh запускает gcloud builds submit с продовыми substitutions и может активировать сервисный аккаунт по ключу"
       - "cloudbuild.yaml автоматически применяет pipeline через gcloud deploy apply"
+      - "scripts/trigger_cloud_build.sh запускает gcloud builds submit с продовыми substitutions"
+      - "cloudbuild.yaml автоматически применяет pipeline через gcloud deploy apply"
+      - "cloudbuild.yaml автоматически применяет pipeline через gcloud deploy apply"
+      - "scripts/render_clouddeploy.sh генерирует delivery-pipeline.yaml"
+      - "gcloud deploy apply разворачивает pipeline и цели"
       - "cloudbuild.yaml запускает сборку и создание релиза"
       - "Cloud Deploy применяет skaffold.yaml профили"
     tracking_fields:
