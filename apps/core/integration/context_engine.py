@@ -1,4 +1,4 @@
-"""Integration layer combining the QuantumContextAnalyzer and PyramidMemory."""
+"""Context engine providing Codex-grade orchestration."""
 
 from __future__ import annotations
 
@@ -12,16 +12,16 @@ from apps.core.context.quantum_analyzer import (
     role_first_pipeline,
     soul_first_pipeline,
 )
-from apps.core.memory.pyramid_memory import EnhancedDigitalSoulLedger, MemoryFragment, PyramidMemory
+from apps.core.memory.pyramid_memory import (
+    EnhancedDigitalSoulLedger,
+    MemoryFragment,
+    PyramidMemory,
+)
 
 
 class EvoCodexContextEngine:
     """High-level orchestrator used to process EvoCodex queries."""
 
-    def __init__(self) -> None:
-        self.quantum_analyzer = QuantumContextAnalyzer
-        self.memory_system = PyramidMemory()
-        self.enhanced_ledger = EnhancedDigitalSoulLedger()
     def __init__(self, memory_system: PyramidMemory | None = None) -> None:
         self.quantum_analyzer_cls = QuantumContextAnalyzer
         self.memory_system = memory_system or PyramidMemory()
@@ -32,7 +32,11 @@ class EvoCodexContextEngine:
             "avg_processing_time": 0.0,
         }
 
-    async def process_query(self, query: str, user_context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    async def process_query(
+        self,
+        query: str,
+        user_context: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """Analyse the query and build a contextual response."""
 
         del user_context  # Reserved for future integration hooks.
@@ -41,10 +45,10 @@ class EvoCodexContextEngine:
         self.stats["total_queries"] += 1
 
         try:
-            analyzer = self.quantum_analyzer(query)
+            analyzer = self.quantum_analyzer_cls(query)
             context = await analyzer.analyze()
             memory_context = await self.enhanced_ledger.find_related_fragments(query)
-            context["memory"].update(memory_context)
+            context["memory"].update(memory_context.to_dict())
             analyzer = self.quantum_analyzer_cls(
                 query,
                 memory_ledger=self.enhanced_ledger,
@@ -125,7 +129,10 @@ def get_context_engine() -> EvoCodexContextEngine:
     return _context_engine
 
 
-async def enhanced_respond(query: str, existing_context: Optional[Dict[str, Any]] = None) -> str:
+async def enhanced_respond(
+    query: str,
+    existing_context: Optional[Dict[str, Any]] = None,
+) -> str:
     """High-level helper returning a formatted contextual response."""
 
     engine = get_context_engine()
