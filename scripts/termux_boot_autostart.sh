@@ -5,6 +5,7 @@
 set -euo pipefail
 
 DEFAULT_HOME="${HOME:-/data/data/com.termux/files/home}"
+EVO_PARENT_DIR="${EVO_PARENT_DIR:-$DEFAULT_HOME}"            # ← default to $HOME, avoid /storage for git safety
 EVO_PARENT_DIR="${EVO_PARENT_DIR:-$DEFAULT_HOME}"
 EVO_PARENT_DIR="${EVO_PARENT_DIR:-/storage/emulated/0/EVO_LOCAL}"
 REPO_NAME="${REPO_NAME:-evopyramid-ai}"
@@ -43,6 +44,7 @@ log() {
 
 log "Termux boot runtime initialising"
 
+# --- sanity checks ---
 if [ ! -x "$PY_ENV" ]; then
   if command -v python3 >/dev/null 2>&1; then
     PY_ENV="$(command -v python3)"
@@ -58,6 +60,7 @@ if ! command -v git >/dev/null 2>&1; then
   exit 1
 fi
 
+# --- ensure repo present (clone or refresh) ---
 ensure_repository_materialised() {
   if [ -f "$LOCAL_DIR/$RUNTIME_SCRIPT_REL" ]; then
     return
@@ -67,6 +70,16 @@ ensure_repository_materialised() {
     log "Repository detected but runtime script missing; refreshing working tree"
     (
       cd "$LOCAL_DIR" && \
+      git fetch "$GIT_REMOTE" "$GIT_BRANCH" >>"$LOG_FILE" 2>&1 || true
+      git reset --hard "$GIT_REMOTE/$GIT_BRANCH" >>"$LOG_FILE" 2>&1 || true
+    )
+  else
+    log "Cloning repository into $LOCAL_DIR"
+    mkdir -p "$(dirname -- "$LOCAL_DIR")"
+    if ! git clone "$REPO_URL" "$LOCAL_DIR" >>"$LOG_FILE" 2>&1; then
+      log "git clone failed; ensure network access and credentials"
+      exit 1
+    fi
       git fetch "$GIT_REMOTE" "$GIT_BRANCH" >>"$LOG_FILE" 2>&1 && \
       git reset --hard "$GIT_REMOTE/$GIT_BRANCH" >>"$LOG_FILE" 2>&1
     ) || true
@@ -85,6 +98,10 @@ ensure_repository_materialised
 
 if [ ! -f "$LOCAL_DIR/$RUNTIME_SCRIPT_REL" ]; then
   log "Runtime entry script $LOCAL_DIR/$RUNTIME_SCRIPT_REL missing"
+  exit 1
+fi
+
+# --- pass config to Python runtime ---
 if [ ! -f "$RUNTIME_SCRIPT" ]; then
   log "Runtime entry script $RUNTIME_SCRIPT missing"
   exit 1
@@ -101,6 +118,7 @@ export EVO_RUNTIME_AUTO_SAFE_DIRECTORY="true"
 export EVO_RUNTIME_PUSH_CHANGES="true"
 export EVO_RUNTIME_EXTRA_WAKE_LOCK="1"
 
+# include legacy migration paths if they exist (optional)
 # Include legacy migration paths so first boot can relocate repositories.
 LEGACY_PATHS=(
   "/storage/emulated/0/EVO_LOCAL/$REPO_NAME"
@@ -116,6 +134,9 @@ if [ -n "$MIGRATE_FROM" ]; then
   export EVO_RUNTIME_MIGRATE_SOURCES="${MIGRATE_FROM%:}"
 fi
 
+# --- run orchestrator (single entry point) ---
+log "Invoking EvoRuntime orchestrator"
+"$PY_ENV" "$LOCAL_DIR/$RUNTIME_SCRIPT_REL" --environment termux --log-file "$LOG_FILE"
 log "Invoking EvoRuntime orchestrator"
 "$PY_ENV" "$LOCAL_DIR/$RUNTIME_SCRIPT_REL" --environment termux --log-file "$LOG_FILE"
 "$PY_ENV" "$RUNTIME_SCRIPT" --environment termux --log-file "$LOG_FILE"
