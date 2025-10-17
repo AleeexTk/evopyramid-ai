@@ -93,6 +93,9 @@ the active canon.
   Archivarius.
 - `docs/EVO_CONTAINER.md` and `docs/EVO_SOUL.md` – deep dives into the container
   mechanics and soul sync philosophy.
+- `clouddeploy/templates/delivery-pipeline.yaml.tpl` + `scripts/render_clouddeploy.sh` – Cloud Deploy
+  harness that renders the progressive delivery pipeline for the API using the PACE ritual; Cloud Build now
+  renders and applies the pipeline before creating each release.
 
 ## EvoCodex Governance Bridge
 
