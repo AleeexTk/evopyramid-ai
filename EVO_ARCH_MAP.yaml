@@ -100,6 +100,28 @@ lineages:
       - "Chronos"
       - "Logos"
 
+  - id: "evopyramid_cloud_deploy_pipeline"
+    name: "EvoPyramid Cloud Deploy Pipeline"
+    tier: "Structural"
+    parent: "clouddeploy"
+    anchor: "clouddeploy/templates/delivery-pipeline.yaml.tpl"
+    description: |
+      Progressive delivery harness that renders Cloud Deploy targets and the delivery
+      pipeline for the EvoPyramid API, linking Cloud Build, Skaffold, and Cloud Run
+      promotions under the PACE ritual. Cloud Build now renders the manifest and applies
+      the pipeline before every release to guarantee idempotent promotions.
+    doc_links:
+      - "docs/guides/EvoPyramid_Google_Cloud_Deployment.md"
+      - "cloudbuild.yaml"
+      - "skaffold.yaml"
+      - "scripts/trigger_cloud_build.sh"
+    sync_references:
+      - "EVO_SYNC_MANIFEST.yaml::directives[evo_cloud_deploy]"
+    status: "active"
+    tags:
+      - "Chronos"
+      - "Kairos"
+
   - id: "evolocal_capability_matrix"
     name: "EvoLocal Capability Expansion"
     tier: "Syntonic"
