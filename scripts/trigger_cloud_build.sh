@@ -43,6 +43,9 @@ if [[ "${DRY_RUN:-0}" != "0" ]]; then
   echo "[cloudbuild] DRY_RUN=1 — showing command only"
 fi
 
+GCLOUD_BIN="${GCLOUD_BIN:-gcloud}"
+
+if ! command -v "$GCLOUD_BIN" >/dev/null 2>&1; then
 if ! command -v gcloud >/dev/null 2>&1; then
   echo "[cloudbuild] gcloud CLI is required to trigger Cloud Build" >&2
   if [[ "${DRY_RUN:-0}" == "0" ]]; then
@@ -50,6 +53,15 @@ if ! command -v gcloud >/dev/null 2>&1; then
   fi
 fi
 
+if [[ "${DRY_RUN:-0}" == "0" ]]; then
+  if ! "$GCLOUD_BIN" auth list --format='value(account)' | grep -q '.'; then
+    echo "[cloudbuild] No active gcloud account detected. Run 'gcloud auth login' or 'gcloud auth activate-service-account' first." >&2
+    exit 1
+  fi
+fi
+
+GCLOUD_CMD=(
+  "$GCLOUD_BIN" builds submit
 GCLOUD_CMD=(
   gcloud builds submit
   "--project=${PROJECT_ID}"
