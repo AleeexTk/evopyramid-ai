@@ -120,6 +120,10 @@ GKE полезен, если планируете несколько микро�
    REGION=us-central1 \
    STAGING_SERVICE=evopyramid-api-staging \
    PRODUCTION_SERVICE=evopyramid-api \
+1. Отрендерите pipeline под ваш проект. Шаблон хранится в `clouddeploy/templates/delivery-pipeline.yaml.tpl` и рендерится скриптом:
+   ```bash
+   PROJECT_ID=your-project-id \
+   REGION=us-central1 \
    scripts/render_clouddeploy.sh
    ```
    Результат появится в `clouddeploy/rendered/delivery-pipeline.yaml`.
@@ -140,6 +144,16 @@ GKE полезен, если планируете несколько микро�
    scripts/trigger_cloud_build.sh
    ```
    Добавьте `IMAGE_TAG` для фиксации конкретного релиза или `DRY_RUN=1`, чтобы проверить формируемую команду без фактического запуска.
+3. Подготовьте Cloud Build trigger на `cloudbuild.yaml`. Он собирает образ, публикует его в Artifact Registry и создаёт релиз через Cloud Deploy, используя `skaffold.yaml` для маппинга образа к сервисам Cloud Run.
+4. Для ручной проверки можно вызвать ту же команду локально:
+   ```bash
+   gcloud deploy releases create evopyramid-api-$(date +%Y%m%d%H%M%S) \
+       --region=${REGION} \
+       --project=${PROJECT_ID} \
+       --delivery-pipeline=evopyramid-api \
+       --skaffold-file=skaffold.yaml \
+       --images=evopyramid-api=${REGION}-docker.pkg.dev/${PROJECT_ID}/evopyramid-repo/evopyramid-api:$(git rev-parse HEAD)
+   ```
 
 Все параметры по умолчанию (регион, имена сервисов) задаются в `skaffold.yaml` и могут быть переопределены через профили `staging` и `production`.
 
