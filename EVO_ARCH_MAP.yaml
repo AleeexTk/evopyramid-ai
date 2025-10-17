@@ -110,6 +110,7 @@ lineages:
       pipeline for the EvoPyramid API, linking Cloud Build, Skaffold, and Cloud Run
       promotions under the PACE ritual. Cloud Build now renders the manifest and applies
       the pipeline before every release to guarantee idempotent promotions.
+      promotions under the PACE ritual.
     doc_links:
       - "docs/guides/EvoPyramid_Google_Cloud_Deployment.md"
       - "cloudbuild.yaml"

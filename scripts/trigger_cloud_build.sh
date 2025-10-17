@@ -46,6 +46,7 @@ fi
 GCLOUD_BIN="${GCLOUD_BIN:-gcloud}"
 
 if ! command -v "$GCLOUD_BIN" >/dev/null 2>&1; then
+if ! command -v gcloud >/dev/null 2>&1; then
   echo "[cloudbuild] gcloud CLI is required to trigger Cloud Build" >&2
   if [[ "${DRY_RUN:-0}" == "0" ]]; then
     exit 1
@@ -61,6 +62,8 @@ fi
 
 GCLOUD_CMD=(
   "$GCLOUD_BIN" builds submit
+GCLOUD_CMD=(
+  gcloud builds submit
   "--project=${PROJECT_ID}"
   "--config=cloudbuild.yaml"
   "--substitutions=_REGION=${REGION},_REPOSITORY=${REPOSITORY},_DELIVERY_PIPELINE=${DELIVERY_PIPELINE},_STAGING_SERVICE=${STAGING_SERVICE},_PRODUCTION_SERVICE=${PRODUCTION_SERVICE},COMMIT_SHA=${RESOLVED_TAG}"
