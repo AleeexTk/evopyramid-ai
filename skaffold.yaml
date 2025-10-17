@@ -1,0 +1,39 @@
+apiVersion: skaffold/v4beta5
+kind: Config
+metadata:
+  name: evopyramid-api
+build:
+  artifacts:
+    - image: evopyramid-api
+      docker:
+        dockerfile: docker/Dockerfile.api
+deploy:
+  cloudrun:
+    region: us-central1
+    revisions:
+      - name: evopyramid-api
+        service: evopyramid-api
+        image: evopyramid-api
+        percent: 100
+        env:
+          - name: ENVIRONMENT
+            value: cloud
+          - name: TRUSTED_HOSTS
+            value: localhost,127.0.0.1,evopyramid.com
+profiles:
+  - name: staging
+    deploy:
+      cloudrun:
+        revisions:
+          - name: evopyramid-api-staging
+            service: evopyramid-api-staging
+            image: evopyramid-api
+            percent: 100
+  - name: production
+    deploy:
+      cloudrun:
+        revisions:
+          - name: evopyramid-api
+            service: evopyramid-api
+            image: evopyramid-api
+            percent: 100
