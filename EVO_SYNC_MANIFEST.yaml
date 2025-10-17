@@ -72,6 +72,35 @@ directives:
     status: "pilot"
 
 
+  - id: evo_cloud_deploy
+    name: "Evo Cloud Deploy Conductor"
+    description: |
+      Стандартизирует выпуск EvoPyramid API в Google Cloud: собирает образ,
+      создаёт релиз через Cloud Deploy и синхронизирует PACE-ритуал с
+      Cloud Run сервисами (staging → production).
+    pipeline:
+      - "scripts/render_clouddeploy.sh генерирует delivery-pipeline.yaml (параметризуемые сервисы)"
+      - "scripts/trigger_cloud_build.sh запускает gcloud builds submit с продовыми substitutions"
+      - "cloudbuild.yaml автоматически применяет pipeline через gcloud deploy apply"
+      - "cloudbuild.yaml запускает сборку и создание релиза"
+      - "Cloud Deploy применяет skaffold.yaml профили"
+    tracking_fields:
+      - commit
+      - image_digest
+      - release_name
+      - target
+      - status
+      - timestamp
+    buffers:
+      evo_memory:
+        - "logs/cloud_deploy/releases.log"
+      feedback:
+        - "logs/codex_feedback.log"
+    observers:
+      - "Trinity Observer фиксирует прохождение стадий staging/production"
+      - "Codex Review отслеживает ошибки релиза"
+    status: "active"
+
 manifest:
   version: "1.2.Ω"
   architecture: "EvoPyramid-AI"
