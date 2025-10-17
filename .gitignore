@@ -51,3 +51,4 @@ Thumbs.db
 
 evo_memory.xml
 clouddeploy/rendered/
+!clouddeploy/rendered/.gitkeep

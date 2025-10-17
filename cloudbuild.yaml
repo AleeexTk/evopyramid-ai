@@ -3,6 +3,8 @@ substitutions:
   _REGION: us-central1
   _REPOSITORY: evopyramid-repo
   _DELIVERY_PIPELINE: evopyramid-api
+  _STAGING_SERVICE: evopyramid-api-staging
+  _PRODUCTION_SERVICE: evopyramid-api
 steps:
   - name: gcr.io/cloud-builders/docker
     id: build-api-image
@@ -19,6 +21,28 @@ steps:
     args:
       - push
       - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/evopyramid-api:$COMMIT_SHA
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: render-delivery-pipeline
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        chmod +x scripts/render_clouddeploy.sh
+        PROJECT_ID=$PROJECT_ID \
+        REGION=${_REGION} \
+        STAGING_SERVICE=${_STAGING_SERVICE} \
+        PRODUCTION_SERVICE=${_PRODUCTION_SERVICE} \
+        ./scripts/render_clouddeploy.sh
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: apply-delivery-pipeline
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        gcloud deploy apply \
+          --file=clouddeploy/rendered/delivery-pipeline.yaml \
+          --project=$PROJECT_ID \
+          --region=${_REGION}
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     id: create-cloud-deploy-release
     entrypoint: bash

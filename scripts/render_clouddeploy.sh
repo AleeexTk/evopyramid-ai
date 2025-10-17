@@ -19,6 +19,9 @@ if [[ -z "${PROJECT_ID:-}" ]]; then
   exit 1
 fi
 
+export ROOT_DIR
+export TEMPLATE_DIR
+export OUTPUT_DIR
 export PROJECT_ID
 export REGION="${REGION:-us-central1}"
 export STAGING_SERVICE="${STAGING_SERVICE:-evopyramid-api-staging}"
@@ -26,6 +29,26 @@ export PRODUCTION_SERVICE="${PRODUCTION_SERVICE:-evopyramid-api}"
 
 mkdir -p "$OUTPUT_DIR"
 
+python - <<'PY'
+import os
+from pathlib import Path
+from string import Template
+
+template_dir = Path(os.environ["TEMPLATE_DIR"])
+output_dir = Path(os.environ["OUTPUT_DIR"])
+
+template = Template((template_dir / "delivery-pipeline.yaml.tpl").read_text())
+rendered = template.safe_substitute(
+    PROJECT_ID=os.environ["PROJECT_ID"],
+    REGION=os.environ["REGION"],
+    STAGING_SERVICE=os.environ["STAGING_SERVICE"],
+    PRODUCTION_SERVICE=os.environ["PRODUCTION_SERVICE"],
+)
+
+output_path = output_dir / "delivery-pipeline.yaml"
+output_path.write_text(rendered)
+print(f"Rendered Cloud Deploy pipeline to {output_path}")
+PY
 envsubst < "$TEMPLATE_DIR/delivery-pipeline.yaml.tpl" > "$OUTPUT_DIR/delivery-pipeline.yaml"
 
 echo "Rendered Cloud Deploy pipeline to $OUTPUT_DIR/delivery-pipeline.yaml"
