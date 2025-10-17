@@ -463,11 +463,6 @@ def _build_timeline_map(records: List[Dict[str, Any]], source: Path) -> Dict[str
                 if len(parts) == 2:
                     lat = _parse_float(parts[0])
                     lon = _parse_float(parts[1])
-            lat = _parse_float(location.get("lat"))
-            lon = _parse_float(location.get("lon"))
-        elif isinstance(location, (list, tuple)) and len(location) == 2:
-            lat = _parse_float(location[0])
-            lon = _parse_float(location[1])
 
         event: Dict[str, Any] = {
             "timestamp": timestamp,
